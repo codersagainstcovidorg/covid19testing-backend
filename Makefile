@@ -3,16 +3,18 @@ SHELL := /bin/bash
 
 .PHONY: all
 
-all: start
+all: base build
 
 dev_setup:
 	python3 -m venv venv
 	. venv/bin/activate
 	pip install -r requirements.txt
 
-dev_build:
-	docker build -t $(APP_NAME):latest -f Dockerfile.dev .
+base:
+	docker build -t $(APP_NAME)-base:latest -f Dockerfile.base .
 
-start: dev_build
-	
-	docker run -it -v $(PWD):/app $(APP_NAME):latest
+build:
+	docker build -t $(APP_NAME):latest .
+
+start: 
+	scripts/start.sh

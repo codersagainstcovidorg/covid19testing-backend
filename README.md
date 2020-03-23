@@ -1,9 +1,19 @@
-# Covid19testing-backend
+# Backend for findcovidtesting.com
 
-# WIP
-excuse the brevity
+## Help Appreciated For These Items
 
-# Local Development
+* Unit tests + test automation
+
+## Features
+
+* Flask + blueprints
+* SQLAlchemy
+* Native AWS Parameter Support for grabbing env and secrets
+* Docker
+* Automation!
+
+
+## Development
 
 Set up virtualenv:
 
@@ -16,6 +26,24 @@ Start flask
 ```shell
 make start
 ```
+
+### Environments
+* Dev - local dev
+* Staging
+* Production
+
+### Secrets
+All secrets are stored in AWS Parameter Store with KMS encryption. The naming structure is:
+
+`$ENVIRONMENT/backend/$VAR_IN_CAPS`
+
+### Adding dependencies
+```shell
+pip install XYZ
+pip freeze > requirements.txt
+```
+
+or you can do `scripts/pip_install.sh XYZ` and save a few seconds of typing
 
 ## Structure
 ```text

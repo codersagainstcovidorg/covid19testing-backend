@@ -1,0 +1,14 @@
+Dockerfile*
+docker-compose.*
+.git
+.gitignore
+.vscode
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+__pypackages__/
+README*
+scripts

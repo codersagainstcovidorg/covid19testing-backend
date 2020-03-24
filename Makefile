@@ -6,9 +6,7 @@ SHELL := /bin/bash
 all: base build
 
 dev_setup:
-	python3 -m venv venv
-	. venv/bin/activate
-	pip install -r requirements.txt
+	scripts/dev_setup.sh
 
 base:
 	docker build -t $(APP_NAME)-base:latest -f Dockerfile.base .

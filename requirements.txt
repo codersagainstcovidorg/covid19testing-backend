@@ -13,7 +13,10 @@ lazy-object-proxy==1.4.3
 MarkupSafe==1.1.1
 mccabe==0.6.1
 pathtools==0.1.2
+psycopg2==2.8.4
 pylint==2.4.4
+pylint-flask==0.6
+pylint-plugin-utils==0.6
 python-dateutil==2.8.1
 s3transfer==0.3.3
 simplejson==3.17.0

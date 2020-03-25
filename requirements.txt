@@ -1,15 +1,18 @@
+alembic==1.4.2
 astroid==2.3.3
 boto3==1.12.27
 botocore==1.15.27
 click==7.1.1
 docutils==0.15.2
 Flask==1.1.1
+Flask-Migrate==2.5.3
 Flask-SQLAlchemy==2.4.1
 isort==4.3.21
 itsdangerous==1.1.0
 Jinja2==2.11.1
 jmespath==0.9.5
 lazy-object-proxy==1.4.3
+Mako==1.1.2
 MarkupSafe==1.1.1
 mccabe==0.6.1
 pathtools==0.1.2
@@ -18,6 +21,7 @@ pylint==2.4.4
 pylint-flask==0.6
 pylint-plugin-utils==0.6
 python-dateutil==2.8.1
+python-editor==1.0.4
 s3transfer==0.3.3
 simplejson==3.17.0
 six==1.14.0

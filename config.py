@@ -1,4 +1,4 @@
-from os import getenv
+from os import getenv, urandom
 from boto3 import client
 
 APP_NAME = "backend"
@@ -22,9 +22,9 @@ class Config:
 
     # General
     FLASK_DEBUG = True if getenv("ENVIRONMENT") is None else False
-    SECRET_KEY = get_param("SECRET_KEY")
+    SECRET_KEY = get_param("SECRET_KEY") if getenv("ENVIRONMENT") is not None else urandom(12).hex()
 
     # Database
     # [DB_TYPE]+[DB_CONNECTOR]://[USERNAME]:[PASSWORD]@[HOST]:[PORT]/[DB_NAME]
-    SQLALCHEMY_DATABASE_URI = get_param("SQLALCHEMY_DATABASE_URI")
+    SQLALCHEMY_DATABASE_URI = get_param("SQLALCHEMY_DATABASE_URI") if getenv("ENVIRONMENT") is not None else getenv("SQLALCHEMY_DATABASE_URI")
     SQLALCHEMY_TRACK_MODIFICATIONS = False

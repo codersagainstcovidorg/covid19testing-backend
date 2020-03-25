@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:10.7
+    environment:
+      POSTGRES_USER: covid
+      POSTGRES_PASSWORD: covid
+      POSTGRES_DB: covid
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres
+    restart: unless-stopped
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_PASSWORD: covid
+      PGADMIN_DEFAULT_EMAIL: user@example.com
+    volumes:
+      - pgadmin:/root/.pgadmin
+    ports:
+      - "5433:80"
+    networks:
+      - postgres
+    restart: unless-stopped
+
+networks:
+  postgres:
+
+volumes:
+    postgres:
+    pgadmin:

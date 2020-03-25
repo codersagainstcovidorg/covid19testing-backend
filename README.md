@@ -10,8 +10,7 @@
 * SQLAlchemy
 * Native AWS Parameter Support for grabbing env and secrets
 * Docker
-* Automation!
-
+* Lots of automation
 
 ## Development
 
@@ -21,11 +20,24 @@ Set up virtualenv:
 make dev_setup
 ```
 
+Start database and pgadmin:
+
+```
+make up
+```
+
 Start flask
 
 ```shell
 make start
 ```
+
+Stop database and pgadmin:
+
+```
+make stop
+```
+
 
 ### Environments
 * Dev - local dev

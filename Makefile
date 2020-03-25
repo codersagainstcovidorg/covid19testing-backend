@@ -6,9 +6,10 @@ SHELL := /bin/bash
 all: base build
 
 dev_setup:
-	python3 -m venv venv
-	. venv/bin/activate
-	pip install -r requirements.txt
+	scripts/dev_setup.sh
+
+db_create:
+	scripts/create_db.sh
 
 base:
 	docker build -t $(APP_NAME)-base:latest -f Dockerfile.base .
@@ -17,4 +18,10 @@ build:
 	docker build -t $(APP_NAME):latest .
 
 start: 
-	scripts/start.sh
+	scripts/dev_start.sh
+
+up:
+	docker-compose up -d
+
+stop:
+	docker-compose stop

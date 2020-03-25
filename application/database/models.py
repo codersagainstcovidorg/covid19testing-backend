@@ -43,10 +43,10 @@ class Entities(db.Model):
                   nullable=True)
   # "location_longitude" double precision DEFAULT NULL,
   location_longitude = db.Column(db.Numeric(precision=64),
-                            nullable=True)
+                  nullable=True)
   # "location_latitude" double precision DEFAULT NULL,
   location_latitude = db.Column(db.Numeric(precision=64),
-                            nullable=True)
+                  nullable=True)
   # "location_contact_phone_main" VARCHAR(255) DEFAULT NULL,
   location_contact_phone_main = db.Column(db.String(255),
                   nullable=True)
@@ -88,13 +88,13 @@ class Entities(db.Model):
                   nullable=True)
   # "location_specific_testing_criteria" TEXT DEFAULT NULL,
   location_specific_testing_criteria = db.Column(db.Text,
-                                            nullable=True)
+                  nullable=True)
   # "additional_information_for_patients" TEXT DEFAULT NULL,
   additional_information_for_patients = db.Column(db.Text,
-                                            nullable=True)
+                  nullable=True)
   # "data_source" TEXT DEFAULT NULL,
   data_source = db.Column(db.Text,
-                    nullable=True)
+                  nullable=True)
   # "raw_data" TEXT DEFAULT NULL,
   raw_data = db.Column(db.Text,
                   nullable=True)
@@ -103,10 +103,10 @@ class Entities(db.Model):
                   nullable=True)
   # "created_on" TIMESTAMPTZ,
   created_on = db.Column(db.DateTime(timezone=True), 
-                    nullable=False)
+                  nullable=False)
   # "updated_on" TIMESTAMPTZ,
   updated_on = db.Column(db.DateTime(timezone=True), 
-                    nullable=False)
+                  nullable=False)
   # "deleted_on" TIMESTAMPTZ,
   deleted_on = db.Column(db.DateTime(timezone=True), 
-                    nullable=False)
+                  nullable=False)

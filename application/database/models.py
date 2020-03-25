@@ -9,6 +9,13 @@ db = SQLAlchemy()
 db.init_app(app)
 migrate = Migrate(app, db)
 
+"""
+Type reference
+["ARRAY","BIGINT","BINARY","BLOB","BOOLEAN","BigInteger","Binary","Boolean","CHAR","CLOB","Concatenable","DATE","DATETIME","DECIMAL","Date","DateTime","Enum","FLOAT","Float","INT","INTEGER","Indexable","Integer","Interval","JSON",
+"LargeBinary","MatchType","NCHAR","NULLTYPE","NUMERIC","NVARCHAR","NullType","Numeric","PickleType","REAL","SMALLINT","STRINGTYPE","SchemaType","SmallInteger","String","TEXT","TIME","TIMESTAMP","Text","Time","TypeDecorator","TypeEngine",
+"Unicode","UnicodeText","UserDefinedType","VARBINARY","VARCHAR","Variant"]
+"""
+
 class Entities(db.Model):
   __table_name__ = 'entities'
 

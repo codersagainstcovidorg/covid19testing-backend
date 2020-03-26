@@ -1,11 +1,14 @@
-from flask import Blueprint, jsonify, make_response, request, abort
+from flask import Blueprint, jsonify, make_response, request, abort, current_app as app
 from .models import Entities, db
 import json
 from datetime import datetime
-from pprint import pprint
+from flask_basicauth import BasicAuth
+
 
 # Create blueprint
 database_bp = Blueprint('database', __name__)
+
+basic_auth = BasicAuth(app)
 
 @database_bp.route('/api/v1/location', methods=['GET'])
 def list_location():
@@ -65,6 +68,7 @@ def list_location():
   return jsonify(data_list)
 
 @database_bp.route('/api/v1/location', methods=['POST'])
+@basic_auth.required
 def create_location():
   """
   create new location
@@ -180,5 +184,6 @@ def get_location(location_id):
   return jsonify(result)
 
 @database_bp.route('/api/v1/location/<id>', methods=['POST'])
+@basic_auth.required
 def update_location(id):
   pass

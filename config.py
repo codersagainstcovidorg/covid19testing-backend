@@ -20,6 +20,10 @@ class Config:
     Set Flask configuration vars from AWS param store
     """
 
+    # Basic auth
+    BASIC_AUTH_USERNAME = get_param("BASIC_AUTH_USERNAME") if getenv("ENVIRONMENT") is not None else getenv("BASIC_AUTH_USERNAME")
+    BASIC_AUTH_PASSWORD = get_param("BASIC_AUTH_PASSWORD") if getenv("ENVIRONMENT") is not None else getenv("BASIC_AUTH_PASSWORD")
+
     # General
     FLASK_DEBUG = True if getenv("ENVIRONMENT") is None else False
     SECRET_KEY = get_param("SECRET_KEY") if getenv("ENVIRONMENT") is not None else urandom(12).hex()

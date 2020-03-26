@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, make_response
+from flask import Blueprint, jsonify, make_response, request, abort
 from .models import Entities, db
 import json
 from datetime import datetime
@@ -14,7 +14,6 @@ def list_location():
   """
   table_data = Entities.query.order_by(Entities.record_id).all()
   data_list = []
-  # TODO: create a serializer function 
   for data in table_data:
     data_list.append(
       {
@@ -70,24 +69,64 @@ def create_location():
   """
   create new location
   """
-  try:
-    data = Entities(
-      location_id="test", 
-      location_name="test center", 
-      geojson=json.dumps({"test": "test1"}),
-      created_on=datetime.datetime.utcnow(),
-      updated_on=datetime.datetime.utcnow(),
-      is_hidden=True,
-      is_verified=False
 
-    )
-    db.session.add(data)
-    db.session.commit()
-    return jsonify(result="ok")
-  except Exception as e:
-    print(e)
-    # todo: return response codes
-    return jsonify(result="failed")
+  # Error if json is not present
+  if not request.json:
+    abort(400)
+  
+  # Get data from json 
+  content = request.get_json()
+
+  # Map json data to Entities model
+  data = Entities(
+    additional_information_for_patients=content.get("additional_information_for_patients"),
+    created_on=content.get("created_on"),
+    data_source=content.get("data_source"),
+    deleted_on=content.get("deleted_on"),
+    geojson=content.get("geojson"),
+    is_collecting_samples=bool(content.get("is_collecting_samples")),
+    is_collecting_samples_by_appointment_only=bool(content.get("is_collecting_samples_by_appointment_only")),
+    is_collecting_samples_for_others=bool(content.get("is_collecting_samples_for_others")),
+    is_collecting_samples_onsite=bool(content.get("is_collecting_samples_onsite")),
+    is_evaluating_symptoms=bool(content.get("is_evaluating_symptoms")),
+    is_evaluating_symptoms_by_appointment_only=bool(content.get("is_evaluating_symptoms_by_appointment_only")),
+    is_hidden=bool(content.get("is_hidden")),
+    is_ordering_tests=bool(content.get("is_ordering_tests")),
+    is_ordering_tests_only_for_those_who_meeting_criteria=bool(content.get("is_ordering_tests_only_for_those_who_meeting_criteria")),
+    is_processing_samples=bool(content.get("is_processing_samples")),
+    is_processing_samples_for_others=bool(content.get("is_processing_samples_for_others")),
+    is_processing_samples_onsite=bool(content.get("is_processing_samples_onsite")),
+    is_verified=bool(content.get("is_verified")),
+    location_address_locality=content.get("location_address_locality"),
+    location_address_postal_code=content.get("location_address_postal_code"),
+    location_address_region=content.get("location_address_region"),
+    location_address_street=content.get("location_address_street"),
+    location_contact_phone_appointments=content.get("location_contact_phone_appointments"),
+    location_contact_phone_covid=content.get("location_contact_phone_covid"),
+    location_contact_phone_main=content.get("location_contact_phone_main"),
+    location_contact_url_covid_appointments=content.get("location_contact_url_covid_appointments"),
+    location_contact_url_covid_info=content.get("location_contact_url_covid_info"),
+    location_contact_url_covid_screening_tool=content.get("location_contact_url_covid_screening_tool"),
+    location_contact_url_covid_virtual_visit=content.get("location_contact_url_covid_virtual_visit"),
+    location_contact_url_main=content.get("location_contact_url_main"),
+    location_hours_of_operation=content.get("location_hours_of_operation"),
+    location_id=content.get("location_id"),
+    location_latitude=content.get("location_latitude"),
+    location_longitude=content.get("location_longitude"),
+    location_name=content.get("location_name"),
+    location_place_of_service_type=content.get("location_place_of_service_type"),
+    location_specific_testing_criteria=content.get("location_specific_testing_criteria"),
+    raw_data=content.get("raw_data"),
+    reference_publisher_of_criteria=content.get("reference_publisher_of_criteria"),
+    updated_on=content.get("updated_on"),
+    record_id=content.get("record_id")
+  )
+
+  # Commit to DB
+  db.session.add(data)
+  db.session.commit()
+
+  return jsonify(result="whatever"), 201
   
 
 @database_bp.route('/api/v1/location/<id>', methods=['GET'])

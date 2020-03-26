@@ -137,10 +137,10 @@ class Entities(db.Model):
                   nullable=True)
   # "created_on" TIMESTAMPTZ,
   created_on = db.Column(db.DateTime(timezone=True), 
-                  nullable=False)
+                  nullable=True)
   # "updated_on" TIMESTAMPTZ,
   updated_on = db.Column(db.DateTime(timezone=True), 
-                  nullable=False)
+                  nullable=True)
   # "deleted_on" TIMESTAMPTZ,
   deleted_on = db.Column(db.DateTime(timezone=True), 
-                  nullable=False)
+                  nullable=True)

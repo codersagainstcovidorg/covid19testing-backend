@@ -11,10 +11,7 @@ dev_setup:
 db_create:
 	scripts/create_db.sh
 
-base:
-	docker build -t $(APP_NAME)-base:latest -f Dockerfile.base .
-
-build:
+docker_build:
 	docker build -t $(APP_NAME):latest .
 
 start: 

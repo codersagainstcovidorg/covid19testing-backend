@@ -1,6 +1,19 @@
 version: '3.7'
 
 services:
+  app:
+    image: covid19testing-backend:latest
+    environment: 
+      FLASK_APP: application
+      FLASK_ENV: development
+      SQLALCHEMY_DATABASE_URI: "postgres://covid:covid@postgres:5432/covid"
+      BASIC_AUTH_USERNAME: covid
+      BASIC_AUTH_PASSWORD: covid
+    ports:
+      - "5000:80"
+    networks: 
+      - postgres
+
   postgres:
     image: postgres:10.7
     environment:

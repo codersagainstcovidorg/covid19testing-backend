@@ -1,8 +1,27 @@
 # Backend for findcovidtesting.com
 
+## Endpoints
+
+### Health check
+GET `/api/v1/health`
+
+### List locations
+GET `/api/v1/location`
+
+### Create location
+Requires basic auth
+POST `/api/v1/location`
+
+### Get location
+GET `/api/v1/location{location_id}`
+
+### Update location (not implemented yet)
+Requires basic auth
+POST `/api/v1/location{location_id}`
+
 ## Help Appreciated For These Items
 
-* Unit tests + test automation
+* Unit tests
 
 ## Features
 
@@ -38,9 +57,14 @@ Stop database and pgadmin:
 make stop
 ```
 
+## Deploying
+
+Push to ECR
+```
+make push
+```
 
 ### Environments
-* Dev - local dev
 * Staging
 * Production
 

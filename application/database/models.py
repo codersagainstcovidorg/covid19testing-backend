@@ -28,10 +28,10 @@ class Entities(db.Model):
                   unique=False,
                   nullable=False)
   # "is_hidden" VARCHAR(255) DEFAULT NULL,
-  is_hidden = db.Column(db.Boolean(255),
+  is_hidden = db.Column(db.Boolean,
                   nullable=True)
   # "is_verified" VARCHAR(255) DEFAULT NULL,
-  is_verified = db.Column(db.Boolean(255),
+  is_verified = db.Column(db.Boolean,
                   nullable=True)
   # "location_name" VARCHAR(255) DEFAULT NULL,
   location_name = db.Column(db.String(255),
@@ -85,40 +85,40 @@ class Entities(db.Model):
   location_hours_of_operation = db.Column(db.String(255),
                   nullable=True)
   # "is_evaluating_symptoms" VARCHAR(255) DEFAULT NULL,
-  is_evaluating_symptoms = db.Column(db.Boolean(255),
+  is_evaluating_symptoms = db.Column(db.Boolean,
                   nullable=True)
   # "is_evaluating_symptoms_by_appointment_only" VARCHAR(255) DEFAULT NULL,
-  is_evaluating_symptoms_by_appointment_only = db.Column(db.Boolean(255),
+  is_evaluating_symptoms_by_appointment_only = db.Column(db.Boolean,
                   nullable=True)
   # "is_ordering_tests" VARCHAR(255) DEFAULT NULL,
-  is_ordering_tests = db.Column(db.Boolean(255),
+  is_ordering_tests = db.Column(db.Boolean,
                   nullable=True)
   # "is_ordering_tests_only_for_those_who_meeting_criteria" VARCHAR(255) DEFAULT NULL,
-  is_ordering_tests_only_for_those_who_meeting_criteria = db.Column(db.Boolean(255),
+  is_ordering_tests_only_for_those_who_meeting_criteria = db.Column(db.Boolean,
                   nullable=True)
   # "is_collecting_samples" VARCHAR(255) DEFAULT NULL,
-  is_collecting_samples = db.Column(db.Boolean(255),
+  is_collecting_samples = db.Column(db.Boolean,
                   nullable=True)
   # "is_collecting_samples_onsite" VARCHAR(255) DEFAULT NULL,
-  is_collecting_samples_onsite = db.Column(db.Boolean(255),
+  is_collecting_samples_onsite = db.Column(db.Boolean,
                   nullable=True)
   # "is_collecting_samples_for_others" VARCHAR(255) DEFAULT NULL,
-  is_collecting_samples_for_others = db.Column(db.Boolean(255),
+  is_collecting_samples_for_others = db.Column(db.Boolean,
                   nullable=True)
   # "is_collecting_samples_by_appointment_only" VARCHAR(255) DEFAULT NULL,
-  is_collecting_samples_by_appointment_only = db.Column(db.Boolean(255),
+  is_collecting_samples_by_appointment_only = db.Column(db.Boolean,
                   nullable=True)
   # "is_processing_samples" VARCHAR(255) DEFAULT NULL,
-  is_processing_samples = db.Column(db.Boolean(255),
+  is_processing_samples = db.Column(db.Boolean,
                   nullable=True)
   # "is_processing_samples_onsite" VARCHAR(255) DEFAULT NULL,
-  is_processing_samples_onsite = db.Column(db.Boolean(255),
+  is_processing_samples_onsite = db.Column(db.Boolean,
                   nullable=True)
-  # "is_processing_samples_for_others" VARCHAR(255) DEFAULT NULL,
-  is_processing_samples_for_others = db.Column(db.Boolean(255),
+  # "is_processing_samples_for_others" VARCHAR DEFAULT NULL,
+  is_processing_samples_for_others = db.Column(db.Boolean,
                   nullable=True)
   # "location_specific_testing_criteria" VARCHAR(255) DEFAULT NULL,
-  location_specific_testing_criteria = db.Column(db.String(255),
+  location_specific_testing_criteria = db.Column(db.Text,
                   nullable=True)
   # "additional_information_for_patients" TEXT DEFAULT NULL,
   additional_information_for_patients = db.Column(db.Text,

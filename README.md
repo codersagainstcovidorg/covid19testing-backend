@@ -59,9 +59,13 @@ or you can do `scripts/pip_install.sh XYZ` and save a few seconds of typing
 
 ## Structure
 ```text
-├── Dockerfile - Main app
-├── Dockerfile.base - Base "OS" components, required packages
+├── application - the app code
+├── config.py - Parameterized app config
+├── create_db.py - Run this to create the DB schema
 ├── docker - Directory of docker specific scripts for use in dockerfile
+├── docker-compose.py - Runs PG, PG admin, and the app
 ├── docker-compose.yml - local development
-└── scripts - Directory of automation scripts for use outside of dockerfile
+├── Dockerfile
+├── scripts - Directory of automation scripts for use outside of dockerfile
+└── wsgi.py - Hook for launching the app instance
 ```

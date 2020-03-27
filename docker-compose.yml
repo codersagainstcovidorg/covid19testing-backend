@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   app:
-    image: covid19testing-backend:latest
+    image: covid-backend:latest
     environment: 
       FLASK_APP: application
       FLASK_ENV: development
@@ -33,7 +33,7 @@ services:
     image: dpage/pgadmin4
     environment:
       PGADMIN_DEFAULT_PASSWORD: covid
-      PGADMIN_DEFAULT_EMAIL: user@example.com
+      PGADMIN_DEFAULT_EMAIL: covid
     volumes:
       - pgadmin:/root/.pgadmin
     ports:

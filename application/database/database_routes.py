@@ -84,7 +84,6 @@ def create_location():
   # Map json data to Entities model
   if isinstance(content, list):
     for data in content:
-      print(data)
       data = Entities(
         additional_information_for_patients=data.get("additional_information_for_patients"),
         created_on=data.get("created_on"),
@@ -128,6 +127,9 @@ def create_location():
         updated_on=data.get("updated_on"),
         record_id=data.get("record_id")
       )
+      # Commit to DB
+      db.session.add(data)
+      db.session.commit()
 
   else:
     data = Entities(
@@ -173,10 +175,9 @@ def create_location():
         updated_on=content.get("updated_on"),
         record_id=content.get("record_id")
       )
-
-  # Commit to DB
-  db.session.add(data)
-  db.session.commit()
+    # Commit to DB
+    db.session.add(data)
+    db.session.commit()
 
   return jsonify(result="accepted"), 201
   

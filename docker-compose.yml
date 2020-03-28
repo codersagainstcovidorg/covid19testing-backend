@@ -3,6 +3,10 @@ version: '3.7'
 services:
   app:
     image: covid-backend:latest
+    entrypoint:
+      - flask
+      - run
+      - --host=0.0.0.0
     environment: 
       FLASK_APP: application
       FLASK_ENV: development
@@ -10,7 +14,9 @@ services:
       BASIC_AUTH_USERNAME: covid
       BASIC_AUTH_PASSWORD: covid
     ports:
-      - "8080:80"
+      - "5000:80"
+    volumes: 
+      - ${PWD}:/app
     networks: 
       - postgres
 

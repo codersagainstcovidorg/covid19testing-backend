@@ -15,7 +15,7 @@ dev_setup:
 	scripts/dev_setup.sh
 
 db_create:
-	scripts/create_db.sh
+	scripts/dev_db.sh
 
 docker_build:
 	docker build -t $(APP_NAME):$(TAG) .
@@ -33,3 +33,6 @@ push: docker_build
 	@aws ecr get-login-password --region $(REGION) | docker login --username AWS --password-stdin $(ECR_URL)
 	docker tag $(APP_NAME):$(TAG) $(ECR_URL):$(TAG)
 	docker push $(ECR_URL):$(TAG)
+
+create_db_fargate:
+	scripts/create_db_fargate.sh $(ENVIRONMENT)

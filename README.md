@@ -33,25 +33,19 @@ POST `/api/v1/location{location_id}`
 
 ## Development
 
-Set up virtualenv:
-
-```shell
-make dev_setup
-```
-
-Start database and pgadmin:
+Start PG, pgadmin, and flask in docker:
 
 ```
 make up
 ```
 
-Start flask
+Create the schema:
 
-```shell
-make start
+```
+make db_create
 ```
 
-Stop database and pgadmin:
+Stop docker environment:
 
 ```
 make stop
@@ -59,9 +53,20 @@ make stop
 
 ## Deploying
 
-Push to ECR
+Build and push to ECR
 ```
 make push
+```
+
+```
+make ENVIRONMENT=production push
+```
+
+## Database Tasks
+The DB schema needs to get created in RDS before using an environment 
+
+```
+make ENVIRONMENT=xyz create_db_fargate
 ```
 
 ### Environments
@@ -75,11 +80,8 @@ All secrets are stored in AWS Parameter Store with KMS encryption. The naming st
 
 ### Adding dependencies
 ```shell
-pip install XYZ
-pip freeze > requirements.txt
+scripts/pip_install.sh XYZ
 ```
-
-or you can do `scripts/pip_install.sh XYZ` and save a few seconds of typing
 
 ## Structure
 ```text

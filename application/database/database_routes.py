@@ -4,7 +4,6 @@ import json
 from datetime import datetime
 from flask_basicauth import BasicAuth
 
-
 # Create blueprint
 database_bp = Blueprint('database', __name__)
 

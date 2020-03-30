@@ -31,6 +31,8 @@ with app.app_context():
   models.db.create_all()
 
   # add extensions for GIS data
-  models.db.engine.execute(extensions_query)
+  # Only done in local, RDS requires superuser to do this
+  if getenv("ENVIRONMENT") is None:
+    models.db.engine.execute(extensions_query)
 
 print("Finished")

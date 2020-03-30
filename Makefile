@@ -34,5 +34,5 @@ push: docker_build
 	docker tag $(APP_NAME):$(TAG) $(ECR_URL):$(TAG)
 	docker push $(ECR_URL):$(TAG)
 
-create_db_fargate:
+create_db_fargate: push
 	scripts/create_db_fargate.sh $(ENVIRONMENT)

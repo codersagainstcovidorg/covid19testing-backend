@@ -12,4 +12,5 @@ aws ecs run-task --cluster "${environment}-ecs" \
   --launch-type "FARGATE" \
   --overrides '{"containerOverrides": [{"name": "backend","command": ["create"], "environment": [{"name": "ENVIRONMENT","value": "'$environment'"}]}]}' \
   --task-definition "${environment}-backend" \
-  --network-configuration "awsvpcConfiguration={subnets=[$SUBNET],securityGroups=[${SG}],assignPublicIp=DISABLED}"
+  --network-configuration "awsvpcConfiguration={subnets=[$SUBNET],securityGroups=[${SG}],assignPublicIp=DISABLED}" \
+  --query 'failures[]' --output text

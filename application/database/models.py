@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import current_app as app
 from flask_migrate import Migrate
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 
 # Create client
 db = SQLAlchemy()
@@ -49,10 +50,10 @@ class Entities(db.Model):
   location_address_postal_code = db.Column(db.String(255),
                   nullable=True)
   # "location_latitude" double precision DEFAULT NULL,
-  location_latitude = db.Column(db.Numeric(precision=64),
+  location_latitude = db.Column(DOUBLE_PRECISION,
                   nullable=True)
   # "location_longitude" double precision DEFAULT NULL,
-  location_longitude = db.Column(db.Numeric(precision=64),
+  location_longitude = db.Column(DOUBLE_PRECISION,
                   nullable=True)
   # "location_contact_phone_main" VARCHAR(255) DEFAULT NULL,
   location_contact_phone_main = db.Column(db.String(255),

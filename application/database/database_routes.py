@@ -69,8 +69,9 @@ def list_location():
     else:
       continue
   
-
-  return jsonify(data_list)
+  response = jsonify(data_list)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 @database_bp.route('/api/v1/location', methods=['POST'])
 @basic_auth.required
@@ -183,8 +184,11 @@ def create_location():
     # Commit to DB
     db.session.add(data)
     db.session.commit()
+  response = make_response(jsonify(result="accepted"), 201)
+  response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+  response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
 
-  return jsonify(result="accepted"), 201
+  return response
   
 
 @database_bp.route('/api/v1/location/<location_id>', methods=['GET'])
@@ -236,10 +240,16 @@ def get_location(location_id):
         }
   else:
     result = {}
-
-  return jsonify(result)
+  
+  response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 @database_bp.route('/api/v1/location/<id>', methods=['POST'])
 @basic_auth.required
 def update_location(id):
-  return jsonify("Not Implemented"), 501
+  response = make_response(jsonify("Not Implemented"), 501)
+  response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+  response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+
+  return response

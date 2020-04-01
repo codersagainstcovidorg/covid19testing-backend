@@ -3,6 +3,7 @@ version: '3.7'
 services:
   app:
     image: covid-backend:latest
+    build: .
     entrypoint:
       - flask
       - run

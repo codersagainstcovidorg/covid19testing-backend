@@ -1,17 +1,13 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import current_app as app
-from flask_migrate import Migrate
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from datetime import datetime, timezone
 import uuid
+from flask_migrate import Migrate, MigrateCommand
 
-# Create client
-db = SQLAlchemy()
 
-# Init DB client
-db.init_app(app)
-
-# Todo: implement migrationscccccclvjenlcbhfjndljcrjnkinruntllglcenhjhkd
+# DB client
+db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 """

@@ -26,6 +26,9 @@ Requires basic auth
 
 PUT `/api/v1/location{location_id}?field=field_name&value=field_value`
 
+`field` - a field name in the schema
+`value` - url encoded value, assumes application/x-www-form-urlencoded type data
+
 ## Features
 
 * Flask + blueprints

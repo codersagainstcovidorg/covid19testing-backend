@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, make_response, request, abort, current_app as app
 from .models import Entities, db
 import json
-from datetime import datetime
 from flask_basicauth import BasicAuth
+from sqlalchemy import func, funcfilter
 
 # Create blueprint
 database_bp = Blueprint('database', __name__)
@@ -10,7 +10,26 @@ database_bp = Blueprint('database', __name__)
 basic_auth = BasicAuth(app)
 
 def str_to_bool(s):
-  return s.lower() in ['true', 'TRUE', 'True', '1', 'yes', 'y', 't']
+  """
+  If s is none it will pass so the default value in the model is used, otherwise will return true 
+  if one of those strings matches
+  """
+  if s is None:
+    pass
+  else:
+    return s.lower() in ['true', 'TRUE', 'True', '1', 'yes', 'y', 't']
+
+@database_bp.route('/api/v1/recentLocation', methods=['GET'])
+def get_recent_location():
+  """
+  Returns the UTC timestamp of the most recently updated verified location
+  """
+  query = funcfilter(func.max(Entities.updated_on), Entities.is_verified == True)
+  data = db.session.query(query).scalar()
+  
+  response = jsonify(data)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 @database_bp.route('/api/v1/location', methods=['GET'])
 def list_location():
@@ -55,11 +74,13 @@ def list_location():
           'location_contact_url_main': data.location_contact_url_main,
           'location_hours_of_operation': data.location_hours_of_operation,
           'location_id': data.location_id,
+          'external_location_id': data.external_location_id,
           'location_latitude': data.location_latitude,
           'location_longitude': data.location_longitude,
           'location_name': data.location_name,
           'location_place_of_service_type': data.location_place_of_service_type,
           'location_specific_testing_criteria': data.location_specific_testing_criteria,
+          'location_status': data.location_status,
           'raw_data': data.raw_data,
           'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
           'updated_on': data.updated_on,
@@ -123,11 +144,13 @@ def create_location():
         location_contact_url_main=data.get("location_contact_url_main"),
         location_hours_of_operation=data.get("location_hours_of_operation"),
         location_id=data.get("location_id"),
+        external_location_id=data.get("external_location_id"),
         location_latitude=data.get("location_latitude"),
         location_longitude=data.get("location_longitude"),
         location_name=data.get("location_name"),
         location_place_of_service_type=data.get("location_place_of_service_type"),
         location_specific_testing_criteria=data.get("location_specific_testing_criteria"),
+        location_status=data.get("location_status"),
         raw_data=data.get("raw_data"),
         reference_publisher_of_criteria=data.get("reference_publisher_of_criteria"),
         updated_on=data.get("updated_on"),
@@ -171,11 +194,13 @@ def create_location():
         location_contact_url_main=content.get("location_contact_url_main"),
         location_hours_of_operation=content.get("location_hours_of_operation"),
         location_id=content.get("location_id"),
+        external_location_id=content.get("external_location_id"),
         location_latitude=content.get("location_latitude"),
         location_longitude=content.get("location_longitude"),
         location_name=content.get("location_name"),
         location_place_of_service_type=content.get("location_place_of_service_type"),
         location_specific_testing_criteria=content.get("location_specific_testing_criteria"),
+        location_status=content.get("location_status"),
         raw_data=content.get("raw_data"),
         reference_publisher_of_criteria=content.get("reference_publisher_of_criteria"),
         updated_on=content.get("updated_on"),
@@ -193,6 +218,9 @@ def create_location():
 
 @database_bp.route('/api/v1/location/<location_id>', methods=['GET'])
 def get_location(location_id):
+  """
+  Returns details of a single location by id
+  """
   data = Entities.query.filter(Entities.location_id == location_id).first()
   if data.is_hidden is False and data.is_verified is True:
     result = {
@@ -228,11 +256,13 @@ def get_location(location_id):
           'location_contact_url_main': data.location_contact_url_main,
           'location_hours_of_operation': data.location_hours_of_operation,
           'location_id': data.location_id,
+          'external_location_id': data.external_location_id,
           'location_latitude': data.location_latitude,
           'location_longitude': data.location_longitude,
           'location_name': data.location_name,
           'location_place_of_service_type': data.location_place_of_service_type,
           'location_specific_testing_criteria': data.location_specific_testing_criteria,
+          'location_status': data.location_status,
           'raw_data': data.raw_data,
           'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
           'updated_on': data.updated_on,
@@ -245,11 +275,16 @@ def get_location(location_id):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@database_bp.route('/api/v1/location/<id>', methods=['POST'])
+@database_bp.route('/api/v1/location/<id>', methods=['PUT'])
 @basic_auth.required
 def update_location(id):
+  """
+  Update a location
+  """
   response = make_response(jsonify("Not Implemented"), 501)
   response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
   response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+
+  #todo: dont update created_on
 
   return response

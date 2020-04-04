@@ -8,6 +8,10 @@ GET `/api/v1/health`
 ### List locations
 GET `/api/v1/location`
 
+### Get Latest Location Timestamp
+Returns the timestamp of the most recently updated verified location
+GET `/api/v1/recentLocation`
+
 ### Create location
 Requires basic auth
 POST `/api/v1/location`
@@ -18,10 +22,6 @@ GET `/api/v1/location{location_id}`
 ### Update location (not implemented yet)
 Requires basic auth
 POST `/api/v1/location{location_id}`
-
-## Help Appreciated For These Items
-
-* Unit tests
 
 ## Features
 

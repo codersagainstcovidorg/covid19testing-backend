@@ -21,10 +21,10 @@ Requires basic auth
 
 POST `/api/v1/location`
 
-### Update location (not implemented yet)
+### Update location
 Requires basic auth
 
-PUT `/api/v1/location{location_id}`
+PUT `/api/v1/location{location_id}?field=field_name&value=field_value`
 
 ## Features
 
@@ -54,6 +54,8 @@ Stop docker environment:
 ```
 make stop
 ```
+
+PG and pgadmin use volumes so their data is preserved.
 
 ## Deploying
 

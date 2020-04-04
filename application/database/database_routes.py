@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, make_response, request, abort, current_app as app
-from .models import Entities, db
+from .models import Entities, db, gen_tz
 import json
 from flask_basicauth import BasicAuth
 from sqlalchemy import func, funcfilter
@@ -275,16 +275,51 @@ def get_location(location_id):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@database_bp.route('/api/v1/location/<id>', methods=['PUT'])
+@database_bp.route('/api/v1/location/<location_id>', methods=['PUT'])
 @basic_auth.required
-def update_location(id):
+def update_location(location_id):
   """
   Update a location
+  /api/v1/location/<id>?field=<fieldname>&value=<value>
+
   """
-  response = make_response(jsonify("Not Implemented"), 501)
-  response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
-  response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
 
-  #todo: dont update created_on
+  # Get the location
+  location = Entities.query.filter(Entities.location_id == location_id).first()
+  if location is None:
+    response = make_response(jsonify(result="Not found"), 404)
+    response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+    return response
+  
+  # field and values from request params
+  new_field = request.args.get('field')
+  new_value = request.args.get('value')
 
-  return response
+  # dont allow update created_on record_id location_id
+  if new_field in ["created_on", "record_id", "location_id", "is_hidden", "is_verified", "deleted_on", "external_location_id"]:
+    response = make_response(jsonify(result="You are not allowed to update this field"), 403)
+    response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+    return response
+  # TODO: "is_hidden", "is_verified", "deleted_on", "external_location_id" will require another mechanism to authenticate verified users
+  # elif (user is not authorized) and new_field in ["is_hidden", "is_verified", "deleted_on", "external_location_id"]:
+  #   response = make_response(jsonify(result="You are not allowed to update this field"), 401)
+  #   response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+  #   response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+  #   return response
+  else:
+    new_fields = {}
+    new_fields[new_field] = new_value
+
+    # Set the value of location.fieldname = value dynamically 
+    for key, value in new_fields.items():
+      setattr(location, key, value)
+
+    db.session.commit()
+    
+    response = make_response(jsonify(result="updated"), 204)
+    response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+
+    return response

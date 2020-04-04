@@ -5,11 +5,11 @@
 ### Base URL
 `api.findcovidtesting.com`
 
-### Health check
-GET `/api/v1/health`
-
 ### List locations
 GET `/api/v1/location`
+
+### Get location
+GET `/api/v1/location{location_id}`
 
 ### Get Latest Location Timestamp
 Returns the timestamp of the most recently updated verified location
@@ -20,9 +20,6 @@ GET `/api/v1/recentLocation`
 Requires basic auth
 
 POST `/api/v1/location`
-
-### Get location
-GET `/api/v1/location{location_id}`
 
 ### Update location (not implemented yet)
 Requires basic auth

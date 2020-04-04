@@ -315,6 +315,7 @@ def update_location(location_id):
     for key, value in new_fields.items():
       setattr(location, key, value)
 
+    # set updated_on to be time.now
     location.updated_on = gen_tz()
     db.session.commit()
     

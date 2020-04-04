@@ -281,7 +281,6 @@ def update_location(location_id):
   """
   Update a location
   /api/v1/location/<id>?field=<fieldname>&value=<value>
-
   """
 
   # Get the location
@@ -318,7 +317,7 @@ def update_location(location_id):
 
     db.session.commit()
     
-    response = make_response(jsonify(result="updated"), 204)
+    response = make_response("",204)
     response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
     response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
 

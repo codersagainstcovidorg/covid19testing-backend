@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, make_response, request, abort, current_app as app
 from .models import Entities, db
 import json
-from datetime import datetime
 from flask_basicauth import BasicAuth
+from sqlalchemy import func, funcfilter
 
 # Create blueprint
 database_bp = Blueprint('database', __name__)
@@ -10,7 +10,27 @@ database_bp = Blueprint('database', __name__)
 basic_auth = BasicAuth(app)
 
 def str_to_bool(s):
-  return s.lower() in ['true', 'TRUE', 'True', '1', 'yes', 'y', 't']
+  """
+  If s is none it will pass so the default value in the model is used, otherwise will return true 
+  if one of those strings matches
+  """
+  if s is None:
+    pass
+  else:
+    return s.lower() in ['true', 'TRUE', 'True', '1', 'yes', 'y', 't']
+
+@database_bp.route('/api/v1/recentLocation', methods=['GET'])
+def get_recent_location():
+  """
+  Returns the UTC timestamp of the most recently updated verified location
+  """
+  query = funcfilter(func.max(Entities.updated_on), Entities.is_verified == True)
+  data = db.session.query(query).scalar()
+  
+  
+  response = jsonify(data)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 @database_bp.route('/api/v1/location', methods=['GET'])
 def list_location():
@@ -60,11 +80,11 @@ def list_location():
           'location_name': data.location_name,
           'location_place_of_service_type': data.location_place_of_service_type,
           'location_specific_testing_criteria': data.location_specific_testing_criteria,
+          'location_status': data.location_status,
           'raw_data': data.raw_data,
           'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
           'updated_on': data.updated_on,
-          'record_id': data.record_id,
-          'location_status': data.location_status
+          'record_id': data.record_id
         }
       )
     else:
@@ -129,11 +149,11 @@ def create_location():
         location_name=data.get("location_name"),
         location_place_of_service_type=data.get("location_place_of_service_type"),
         location_specific_testing_criteria=data.get("location_specific_testing_criteria"),
+        location_status=data.get("location_status"),
         raw_data=data.get("raw_data"),
         reference_publisher_of_criteria=data.get("reference_publisher_of_criteria"),
         updated_on=data.get("updated_on"),
-        record_id=data.get("record_id"),
-        location_status=data.get("location_status")
+        record_id=data.get("record_id")
       )
       # Commit to DB
       db.session.add(data)
@@ -249,11 +269,13 @@ def get_location(location_id):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@database_bp.route('/api/v1/location/<id>', methods=['POST'])
+@database_bp.route('/api/v1/location/<id>', methods=['PUT'])
 @basic_auth.required
 def update_location(id):
   response = make_response(jsonify("Not Implemented"), 501)
   response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
   response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+
+  #todo: dont update created_on
 
   return response

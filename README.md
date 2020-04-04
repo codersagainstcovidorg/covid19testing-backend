@@ -2,6 +2,9 @@
 
 ## Endpoints
 
+### Base URL
+`api.findcovidtesting.com`
+
 ### Health check
 GET `/api/v1/health`
 
@@ -27,8 +30,9 @@ POST `/api/v1/location{location_id}`
 
 * Flask + blueprints
 * SQLAlchemy
-* Native AWS Parameter Support for grabbing env and secrets
+* AWS Parameter Support for grabbing env and secrets
 * Docker
+* Nginx + uWSGI
 * Lots of automation
 
 ## Development

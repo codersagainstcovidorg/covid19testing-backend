@@ -2,9 +2,8 @@
 
 export FLASK_APP="application"
 
-# placeholder for start up tasks
-
 if [[ "$1" == "start" ]]; then
+  docker/migrate.sh
   exec /usr/bin/supervisord
 fi
 

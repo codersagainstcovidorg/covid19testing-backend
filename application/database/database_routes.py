@@ -3,6 +3,7 @@ from .models import Entities, db, gen_tz
 import json
 from flask_basicauth import BasicAuth
 from sqlalchemy import func, funcfilter
+from urllib import parse
 
 # Create blueprint
 database_bp = Blueprint('database', __name__)
@@ -293,7 +294,8 @@ def update_location(location_id):
   
   # field and values from request params
   new_field = request.args.get('field')
-  new_value = request.args.get('value')
+  # application/x-www-form-urlencoded values have spaces as + instead of %20
+  new_value = parse.unquote_plus(request.args.get('value'))
 
   # dont allow update created_on record_id location_id
   if new_field in ["created_on", "record_id", "location_id", "is_hidden", "is_verified", "deleted_on", "external_location_id"]:

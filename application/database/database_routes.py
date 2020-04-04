@@ -27,7 +27,6 @@ def get_recent_location():
   query = funcfilter(func.max(Entities.updated_on), Entities.is_verified == True)
   data = db.session.query(query).scalar()
   
-  
   response = jsonify(data)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -216,6 +215,9 @@ def create_location():
 
 @database_bp.route('/api/v1/location/<location_id>', methods=['GET'])
 def get_location(location_id):
+  """
+  Returns details of a single location by id
+  """
   data = Entities.query.filter(Entities.location_id == location_id).first()
   if data.is_hidden is False and data.is_verified is True:
     result = {
@@ -272,6 +274,9 @@ def get_location(location_id):
 @database_bp.route('/api/v1/location/<id>', methods=['PUT'])
 @basic_auth.required
 def update_location(id):
+  """
+  Update a location
+  """
   response = make_response(jsonify("Not Implemented"), 501)
   response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
   response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')

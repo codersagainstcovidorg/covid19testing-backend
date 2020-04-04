@@ -63,7 +63,8 @@ def list_location():
           'raw_data': data.raw_data,
           'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
           'updated_on': data.updated_on,
-          'record_id': data.record_id
+          'record_id': data.record_id,
+          'location_status': data.location_status
         }
       )
     else:
@@ -131,7 +132,8 @@ def create_location():
         raw_data=data.get("raw_data"),
         reference_publisher_of_criteria=data.get("reference_publisher_of_criteria"),
         updated_on=data.get("updated_on"),
-        record_id=data.get("record_id")
+        record_id=data.get("record_id"),
+        location_status=data.get("location_status")
       )
       # Commit to DB
       db.session.add(data)
@@ -176,6 +178,7 @@ def create_location():
         location_name=content.get("location_name"),
         location_place_of_service_type=content.get("location_place_of_service_type"),
         location_specific_testing_criteria=content.get("location_specific_testing_criteria"),
+        location_status=content.get("location_status"),
         raw_data=content.get("raw_data"),
         reference_publisher_of_criteria=content.get("reference_publisher_of_criteria"),
         updated_on=content.get("updated_on"),
@@ -233,6 +236,7 @@ def get_location(location_id):
           'location_name': data.location_name,
           'location_place_of_service_type': data.location_place_of_service_type,
           'location_specific_testing_criteria': data.location_specific_testing_criteria,
+          'location_status': data.location_status,
           'raw_data': data.raw_data,
           'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
           'updated_on': data.updated_on,

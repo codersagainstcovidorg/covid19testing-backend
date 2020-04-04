@@ -52,6 +52,12 @@ Create the schema:
 make db_create
 ```
 
+Create and apply migrations:
+
+```
+make migrate
+```
+
 Stop docker environment:
 
 ```

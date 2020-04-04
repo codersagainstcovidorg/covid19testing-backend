@@ -36,3 +36,7 @@ push: docker_build
 
 create_db_fargate: push
 	scripts/create_db_fargate.sh $(ENVIRONMENT)
+
+migrate:
+	SQLALCHEMY_DATABASE_URI=postgres://covid:covid@localhost:5432/covid  flask db migrate
+	SQLALCHEMY_DATABASE_URI=postgres://covid:covid@localhost:5432/covid  flask db upgrade

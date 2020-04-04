@@ -41,6 +41,11 @@ class Entities(db.Model):
                   unique=False,
                   nullable=False,
                   default=gen_uuid)
+  # "external_location_id" TEXT DEFAULT NULL
+  external_location_id = db.Column(db.Text,
+                  index=False,
+                  unique=False,
+                  nullable=True)
   # "is_hidden" BOOLEAN NOT NULL DEFAULT true,
   is_hidden = db.Column(db.Boolean,
                   nullable=False,

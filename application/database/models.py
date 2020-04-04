@@ -40,7 +40,7 @@ class Entities(db.Model):
                   index=True,
                   unique=False,
                   nullable=False,
-                  default=gen_uuid())
+                  default=gen_uuid)
   # "is_hidden" BOOLEAN NOT NULL DEFAULT true,
   is_hidden = db.Column(db.Boolean,
                   nullable=False,
@@ -165,11 +165,11 @@ class Entities(db.Model):
   # "created_on" TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_on = db.Column(db.DateTime(timezone=True), 
                   nullable=False,
-                  default=gen_tz())
+                  default=gen_tz)
   # "updated_on" TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_on = db.Column(db.DateTime(timezone=True), 
                   nullable=False,
-                  default=gen_tz())
+                  default=gen_tz)
   # "deleted_on" TIMESTAMPTZ,
   deleted_on = db.Column(db.DateTime(timezone=True), 
                   nullable=True)

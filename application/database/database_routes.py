@@ -234,50 +234,50 @@ def get_location(location_id):
   data = Entities.query.filter(Entities.location_id == location_id).first()
   if data.is_hidden is False and data.is_verified is True:
     result = {
-          'additional_information_for_patients': data.additional_information_for_patients,
-          'created_on': data.created_on,
-          'data_source': data.data_source,
-          'deleted_on': data.deleted_on,
-          'geojson': data.geojson,
-          'is_collecting_samples': data.is_collecting_samples,
-          'is_collecting_samples_by_appointment_only': data.is_collecting_samples_by_appointment_only,
-          'is_collecting_samples_for_others': data.is_collecting_samples_for_others,
-          'is_collecting_samples_onsite': data.is_collecting_samples_onsite,
-          'is_evaluating_symptoms': data.is_evaluating_symptoms,
-          'is_evaluating_symptoms_by_appointment_only': data.is_evaluating_symptoms_by_appointment_only,
-          'is_hidden': data.is_hidden,
-          'is_ordering_tests': data.is_ordering_tests,
-          'is_ordering_tests_only_for_those_who_meeting_criteria': data.is_ordering_tests_only_for_those_who_meeting_criteria,
-          'is_processing_samples': data.is_processing_samples ,
-          'is_processing_samples_for_others': data.is_processing_samples_for_others,
-          'is_processing_samples_onsite': data.is_processing_samples_onsite,
-          'is_verified': data.is_verified,
-          'location_address_locality': data.location_address_locality,
-          'location_address_postal_code': data.location_address_postal_code,
-          'location_address_region': data.location_address_region,
-          'location_address_street': data.location_address_street,
-          'location_contact_phone_appointments': data.location_contact_phone_appointments,
-          'location_contact_phone_covid': data.location_contact_phone_covid,
-          'location_contact_phone_main': data.location_contact_phone_main,
-          'location_contact_url_covid_appointments': data.location_contact_url_covid_appointments,
-          'location_contact_url_covid_info': data.location_contact_url_covid_info,
-          'location_contact_url_covid_screening_tool': data.location_contact_url_covid_screening_tool,
-          'location_contact_url_covid_virtual_visit': data.location_contact_url_covid_virtual_visit,
-          'location_contact_url_main': data.location_contact_url_main,
-          'location_hours_of_operation': data.location_hours_of_operation,
-          'location_id': data.location_id,
-          'external_location_id': data.external_location_id,
-          'location_latitude': data.location_latitude,
-          'location_longitude': data.location_longitude,
-          'location_name': data.location_name,
-          'location_place_of_service_type': data.location_place_of_service_type,
-          'location_specific_testing_criteria': data.location_specific_testing_criteria,
-          'location_status': data.location_status,
-          'raw_data': data.raw_data,
-          'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
-          'updated_on': data.updated_on,
-          'record_id': data.record_id
-        }
+      'additional_information_for_patients': data.additional_information_for_patients,
+      'created_on': data.created_on,
+      'data_source': data.data_source,
+      'deleted_on': data.deleted_on,
+      'geojson': data.geojson,
+      'is_collecting_samples': data.is_collecting_samples,
+      'is_collecting_samples_by_appointment_only': data.is_collecting_samples_by_appointment_only,
+      'is_collecting_samples_for_others': data.is_collecting_samples_for_others,
+      'is_collecting_samples_onsite': data.is_collecting_samples_onsite,
+      'is_evaluating_symptoms': data.is_evaluating_symptoms,
+      'is_evaluating_symptoms_by_appointment_only': data.is_evaluating_symptoms_by_appointment_only,
+      'is_hidden': data.is_hidden,
+      'is_ordering_tests': data.is_ordering_tests,
+      'is_ordering_tests_only_for_those_who_meeting_criteria': data.is_ordering_tests_only_for_those_who_meeting_criteria,
+      'is_processing_samples': data.is_processing_samples ,
+      'is_processing_samples_for_others': data.is_processing_samples_for_others,
+      'is_processing_samples_onsite': data.is_processing_samples_onsite,
+      'is_verified': data.is_verified,
+      'location_address_locality': data.location_address_locality,
+      'location_address_postal_code': data.location_address_postal_code,
+      'location_address_region': data.location_address_region,
+      'location_address_street': data.location_address_street,
+      'location_contact_phone_appointments': data.location_contact_phone_appointments,
+      'location_contact_phone_covid': data.location_contact_phone_covid,
+      'location_contact_phone_main': data.location_contact_phone_main,
+      'location_contact_url_covid_appointments': data.location_contact_url_covid_appointments,
+      'location_contact_url_covid_info': data.location_contact_url_covid_info,
+      'location_contact_url_covid_screening_tool': data.location_contact_url_covid_screening_tool,
+      'location_contact_url_covid_virtual_visit': data.location_contact_url_covid_virtual_visit,
+      'location_contact_url_main': data.location_contact_url_main,
+      'location_hours_of_operation': data.location_hours_of_operation,
+      'location_id': data.location_id,
+      'external_location_id': data.external_location_id,
+      'location_latitude': data.location_latitude,
+      'location_longitude': data.location_longitude,
+      'location_name': data.location_name,
+      'location_place_of_service_type': data.location_place_of_service_type,
+      'location_specific_testing_criteria': data.location_specific_testing_criteria,
+      'location_status': data.location_status,
+      'raw_data': data.raw_data,
+      'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
+      'updated_on': data.updated_on,
+      'record_id': data.record_id
+    }
   else:
     result = {}
   
@@ -315,7 +315,7 @@ def update_location(location_id):
   # dont allow update created_on record_id location_id
   if new_field in ["created_on", "record_id", "location_id", "is_hidden", "is_verified", "deleted_on", "external_location_id"]:
     return error_response("You are not allowed to update this field", 403)
-    
+
   # TODO: "is_hidden", "is_verified", "deleted_on", "external_location_id" will require another mechanism to authenticate verified users
   # elif (user is not authorized) and new_field in ["is_hidden", "is_verified", "deleted_on", "external_location_id"]:
   #   response = make_response(jsonify(result="You are not allowed to update this field"), 401)
@@ -334,7 +334,7 @@ def update_location(location_id):
     location.updated_on = gen_tz()
     db.session.commit()
     
-    response = make_response("",204)
+    response = make_response("", 204)
     response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
     response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
 

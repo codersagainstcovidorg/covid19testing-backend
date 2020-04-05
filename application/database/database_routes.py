@@ -20,6 +20,15 @@ def str_to_bool(s):
   else:
     return s.lower() in ['true', 'TRUE', 'True', '1', 'yes', 'y', 't']
 
+def error_response(error, response_code):
+  """
+  return an error
+  """
+  response = make_response(jsonify(result=f"{error}"), 400)
+  response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+  response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+  return response
+
 @database_bp.route('/api/v1/recentLocation', methods=['GET'])
 def get_recent_location():
   """
@@ -287,22 +296,26 @@ def update_location(location_id):
   # Get the location
   location = Entities.query.filter(Entities.location_id == location_id).first()
   if location is None:
-    response = make_response(jsonify(result="Not found"), 404)
-    response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
-    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
-    return response
+    return error_response("Not Found", 404)
   
-  # field and values from request params
-  new_field = request.args.get('field')
-  # application/x-www-form-urlencoded values have spaces as + instead of %20
-  new_value = parse.unquote_plus(request.args.get('value'))
+  try:
+    # field and values from request params
+    new_field = request.args.get('field')
+    # application/x-www-form-urlencoded values have spaces as + instead of %20
+    new_value = parse.unquote_plus(request.args.get('value'))
+    
+    # return if fields are empty
+    if "" in [new_field, new_value]:
+      return error_response("Parameters cannot be empty", 400)
+
+  # if values are None, exit 
+  except AttributeError:
+    return error_response("Parameters cannot be empty", 400)
 
   # dont allow update created_on record_id location_id
   if new_field in ["created_on", "record_id", "location_id", "is_hidden", "is_verified", "deleted_on", "external_location_id"]:
-    response = make_response(jsonify(result="You are not allowed to update this field"), 403)
-    response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
-    response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
-    return response
+    return error_response("You are not allowed to update this field", 403)
+    
   # TODO: "is_hidden", "is_verified", "deleted_on", "external_location_id" will require another mechanism to authenticate verified users
   # elif (user is not authorized) and new_field in ["is_hidden", "is_verified", "deleted_on", "external_location_id"]:
   #   response = make_response(jsonify(result="You are not allowed to update this field"), 401)

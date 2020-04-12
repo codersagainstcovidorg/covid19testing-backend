@@ -21,6 +21,13 @@ Requires basic auth
 
 POST `/api/v1/location`
 
+### Upload CSV file
+Requires basic auth
+
+This will upload a csv which will get asynchronously converted to json and uploaded to db
+
+POST `/api/v1/location/csv`
+
 ### Update location
 Requires basic auth
 

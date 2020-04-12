@@ -22,10 +22,13 @@ class Config:
 
     if getenv("ENVIRONMENT") is None:
       SITE_ENDPOINT = "localhost"
+      S3_BUCKET = "csv-processor-staging-9129jf"
     elif "staging" in getenv("ENVIRONMENT"):
       SITE_ENDPOINT = "https://staging.findcovidtesting.com"
+      S3_BUCKET = "csv-processor-staging-9129jf"
     elif "production" in getenv("ENVIRONMENT"):
       SITE_ENDPOINT = "https://findcovidtesting.com"
+      S3_BUCKET = "csv-processor-production-xwhqd0124"
 
     # Basic auth
     BASIC_AUTH_USERNAME = get_param("BASIC_AUTH_USERNAME") if getenv("ENVIRONMENT") is not None else getenv("BASIC_AUTH_USERNAME")

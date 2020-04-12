@@ -21,10 +21,13 @@ Requires basic auth
 
 POST `/api/v1/location`
 
-### Update location (not implemented yet)
+### Update location
 Requires basic auth
 
-PUT `/api/v1/location{location_id}`
+PUT `/api/v1/location{location_id}?field=field_name&value=field_value`
+
+`field` - a field name in the schema
+`value` - url encoded value, assumes application/x-www-form-urlencoded type data
 
 ## Features
 
@@ -49,11 +52,19 @@ Create the schema:
 make db_create
 ```
 
+Create and apply migrations:
+
+```
+make migrate
+```
+
 Stop docker environment:
 
 ```
 make stop
 ```
+
+PG and pgadmin use volumes so their data is preserved.
 
 ## Deploying
 

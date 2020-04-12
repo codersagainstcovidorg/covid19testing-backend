@@ -4,11 +4,21 @@ import json
 from flask_basicauth import BasicAuth
 from sqlalchemy import func, funcfilter
 from urllib import parse
+import boto3
+from os import getenv
 
 # Create blueprint
 database_bp = Blueprint('database', __name__)
 
 basic_auth = BasicAuth(app)
+s3 = boto3.client('s3', region_name=getenv("AWS_REGION", 'us-east-1'))
+
+def s3_upload(file_path, bucket_name):
+  """
+  Upload to s3
+  """
+  response = s3.upload_file(file_path, bucket_name, f'unprocessed/{file_path}')
+  return response
 
 def str_to_bool(s):
   """
@@ -286,6 +296,31 @@ def get_location(location_id):
   except AttributeError:
     response = error_response("Not Found", 404)
   response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@database_bp.route('/api/v1/location/csv', methods=['POST'])
+@basic_auth.required
+def upload_csv():
+  """
+  Upload a csv
+  """
+
+  # Error if file is not present
+  if 'file' not in request.files:
+    abort(400)
+  
+  # Get the file
+  f = request.files['file']
+  file_path = f"/tmp/{f.filename}"
+  f.save(file_path)
+
+  # Upload to s3
+  s3_upload(file_path, app.config['S3_BUCKET'])
+
+  response = make_response(jsonify(result="accepted"), 201)
+  response.headers.add('Access-Control-Allow-Origin', app.config['SITE_ENDPOINT'])
+  response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+
   return response
 
 @database_bp.route('/api/v1/location/<location_id>', methods=['PUT'])

@@ -69,11 +69,11 @@ def list_location():
 
   if filter_latitude and filter_longitude and filter_distance:
     try:
-      table_data = Entities.query.filter(text("POINT({:f}, {:f}) <@> POINT(location_longitude, location_latitude) < {:f}".format(float(filter_longitude), float(filter_latitude), float(filter_distance)))).order_by(Entities.record_id)
+      table_data = Entities.query.filter(text("POINT({:f}, {:f}) <@> POINT(location_longitude, location_latitude) < {:f}".format(float(filter_longitude), float(filter_latitude), float(filter_distance))))
     except:
       abort(400)
   else:
-    table_data = Entities.query.order_by(Entities.record_id).all()
+    table_data = Entities.query.all()
 
   data_list = []
   for data in table_data:

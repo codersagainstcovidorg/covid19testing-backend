@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, make_response, request, abort, current_app
 from .models import Entities, db, gen_tz
 import json
 from flask_basicauth import BasicAuth
-from sqlalchemy import func, funcfilter
+from sqlalchemy import func, funcfilter, text
 from urllib import parse
 import boto3
 from os import getenv
@@ -60,8 +60,21 @@ def get_recent_location():
 def list_location():
   """
   list all locations
+  optionally support filters
   """
-  table_data = Entities.query.order_by(Entities.record_id).all()
+
+  filter_latitude = request.args.get('source_latitude')
+  filter_longitude = request.args.get('source_longitude')
+  filter_distance = request.args.get('distance') # miles
+
+  if filter_latitude and filter_longitude and filter_distance:
+    try:
+      table_data = Entities.query.filter(text("POINT({:f}, {:f}) <@> POINT(location_longitude, location_latitude) < {:f}".format(float(filter_longitude), float(filter_latitude), float(filter_distance)))).order_by(Entities.record_id)
+    except:
+      abort(400)
+  else:
+    table_data = Entities.query.order_by(Entities.record_id).all()
+
   data_list = []
   for data in table_data:
     if data.is_hidden is False and data.is_verified is True:

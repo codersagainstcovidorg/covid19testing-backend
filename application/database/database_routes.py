@@ -20,15 +20,20 @@ def s3_upload(file_path, bucket_name):
   response = s3.upload_file(file_path, bucket_name, f'unprocessed/{file_path}')
   return response
 
-def str_to_bool(s):
+def any_to_bool(s):
   """
-  If s is none it will pass so the default value in the model is used, otherwise will return true 
-  if one of those strings matches
+  If s can't be converted to a bool it will pass so the default value in the model is used,
+  otherwise will return true if it's truthy
   """
-  if s is None:
-    pass
-  else:
-    return s.lower() in ['true', 'TRUE', 'True', '1', 'yes', 'y', 't']
+  if type(s) == bool:
+    return s
+  elif type(s) == int:
+    return s == 1
+  elif type(s) == str:
+    return s.lower() in ['true', '1', 'yes', 'y', 't']
+
+  pass
+
 
 def error_response(error, response_code):
   """
@@ -137,19 +142,19 @@ def create_location():
         data_source=data.get("data_source"),
         deleted_on=data.get("deleted_on"),
         geojson=data.get("geojson"),
-        is_collecting_samples=str_to_bool(data.get("is_collecting_samples")),
-        is_collecting_samples_by_appointment_only=str_to_bool(data.get("is_collecting_samples_by_appointment_only")),
-        is_collecting_samples_for_others=str_to_bool(data.get("is_collecting_samples_for_others")),
-        is_collecting_samples_onsite=str_to_bool(data.get("is_collecting_samples_onsite")),
-        is_evaluating_symptoms=str_to_bool(data.get("is_evaluating_symptoms")),
-        is_evaluating_symptoms_by_appointment_only=str_to_bool(data.get("is_evaluating_symptoms_by_appointment_only")),
-        is_hidden=str_to_bool(data.get("is_hidden")),
-        is_ordering_tests=str_to_bool(data.get("is_ordering_tests")),
-        is_ordering_tests_only_for_those_who_meeting_criteria=str_to_bool(data.get("is_ordering_tests_only_for_those_who_meeting_criteria")),
-        is_processing_samples=str_to_bool(data.get("is_processing_samples")),
-        is_processing_samples_for_others=str_to_bool(data.get("is_processing_samples_for_others")),
-        is_processing_samples_onsite=str_to_bool(data.get("is_processing_samples_onsite")),
-        is_verified=str_to_bool(data.get("is_verified")),
+        is_collecting_samples=any_to_bool(data.get("is_collecting_samples")),
+        is_collecting_samples_by_appointment_only=any_to_bool(data.get("is_collecting_samples_by_appointment_only")),
+        is_collecting_samples_for_others=any_to_bool(data.get("is_collecting_samples_for_others")),
+        is_collecting_samples_onsite=any_to_bool(data.get("is_collecting_samples_onsite")),
+        is_evaluating_symptoms=any_to_bool(data.get("is_evaluating_symptoms")),
+        is_evaluating_symptoms_by_appointment_only=any_to_bool(data.get("is_evaluating_symptoms_by_appointment_only")),
+        is_hidden=any_to_bool(data.get("is_hidden")),
+        is_ordering_tests=any_to_bool(data.get("is_ordering_tests")),
+        is_ordering_tests_only_for_those_who_meeting_criteria=any_to_bool(data.get("is_ordering_tests_only_for_those_who_meeting_criteria")),
+        is_processing_samples=any_to_bool(data.get("is_processing_samples")),
+        is_processing_samples_for_others=any_to_bool(data.get("is_processing_samples_for_others")),
+        is_processing_samples_onsite=any_to_bool(data.get("is_processing_samples_onsite")),
+        is_verified=any_to_bool(data.get("is_verified")),
         location_address_locality=data.get("location_address_locality"),
         location_address_postal_code=data.get("location_address_postal_code"),
         location_address_region=data.get("location_address_region"),
@@ -187,19 +192,19 @@ def create_location():
         data_source=content.get("data_source"),
         deleted_on=content.get("deleted_on"),
         geojson=content.get("geojson"),
-        is_collecting_samples=str_to_bool(content.get("is_collecting_samples")),
-        is_collecting_samples_by_appointment_only=str_to_bool(content.get("is_collecting_samples_by_appointment_only")),
-        is_collecting_samples_for_others=str_to_bool(content.get("is_collecting_samples_for_others")),
-        is_collecting_samples_onsite=str_to_bool(content.get("is_collecting_samples_onsite")),
-        is_evaluating_symptoms=str_to_bool(content.get("is_evaluating_symptoms")),
-        is_evaluating_symptoms_by_appointment_only=str_to_bool(content.get("is_evaluating_symptoms_by_appointment_only")),
-        is_hidden=str_to_bool(content.get("is_hidden")),
-        is_ordering_tests=str_to_bool(content.get("is_ordering_tests")),
-        is_ordering_tests_only_for_those_who_meeting_criteria=str_to_bool(content.get("is_ordering_tests_only_for_those_who_meeting_criteria")),
-        is_processing_samples=str_to_bool(content.get("is_processing_samples")),
-        is_processing_samples_for_others=str_to_bool(content.get("is_processing_samples_for_others")),
-        is_processing_samples_onsite=str_to_bool(content.get("is_processing_samples_onsite")),
-        is_verified=str_to_bool(content.get("is_verified")),
+        is_collecting_samples=any_to_bool(content.get("is_collecting_samples")),
+        is_collecting_samples_by_appointment_only=any_to_bool(content.get("is_collecting_samples_by_appointment_only")),
+        is_collecting_samples_for_others=any_to_bool(content.get("is_collecting_samples_for_others")),
+        is_collecting_samples_onsite=any_to_bool(content.get("is_collecting_samples_onsite")),
+        is_evaluating_symptoms=any_to_bool(content.get("is_evaluating_symptoms")),
+        is_evaluating_symptoms_by_appointment_only=any_to_bool(content.get("is_evaluating_symptoms_by_appointment_only")),
+        is_hidden=any_to_bool(content.get("is_hidden")),
+        is_ordering_tests=any_to_bool(content.get("is_ordering_tests")),
+        is_ordering_tests_only_for_those_who_meeting_criteria=any_to_bool(content.get("is_ordering_tests_only_for_those_who_meeting_criteria")),
+        is_processing_samples=any_to_bool(content.get("is_processing_samples")),
+        is_processing_samples_for_others=any_to_bool(content.get("is_processing_samples_for_others")),
+        is_processing_samples_onsite=any_to_bool(content.get("is_processing_samples_onsite")),
+        is_verified=any_to_bool(content.get("is_verified")),
         location_address_locality=content.get("location_address_locality"),
         location_address_postal_code=content.get("location_address_postal_code"),
         location_address_region=content.get("location_address_region"),

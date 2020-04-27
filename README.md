@@ -8,6 +8,14 @@
 ### List locations
 GET `/api/v1/location`
 
+Optionally search to an area with source_latitude, source_longitude, distance
+
+Example:
+
+```
+curl -s -X GET 'localhost:5000/api/v1/location?source_latitude=30.267153&source_longitude=-97.743057&distance=5'
+```
+
 ### Get location
 GET `/api/v1/location{location_id}`
 

@@ -1,12 +1,12 @@
--- Returns records in `entities` table within specified geom
+-- Takes raw data from `data_ingest` and runs it through ETL process
 -- ENVIRONMENTS --
 --   staging
 -- DEPENDENCIES --
---   Objects: None
---   Functions: None
+--   Objects: entities, data_ingest
+--   Functions: update_entities
 -- DEFAULTS --
---   radius: 10.0
-CREATE OR REPLACE FUNCTION run_data_ingest(
+--   data_source_name: 'giscorps'
+CREATE OR REPLACE FUNCTION ingest_data(
     IN data_source_name                                 text DEFAULT 'giscorps'
   )
   RETURNS VOID
@@ -15,6 +15,7 @@ CREATE OR REPLACE FUNCTION run_data_ingest(
       current_record_count INTEGER ;
       new_record_count INTEGER;
     BEGIN
+      -- Make sure that we don't inadvertently wipe the DB
       IF (data_source_name NOT ILIKE '%giscorps%') THEN 
         RAISE EXCEPTION E'`Unrecognized data source: `%`', data_source_name;
       ELSE
@@ -22,10 +23,14 @@ CREATE OR REPLACE FUNCTION run_data_ingest(
         EXECUTE 'SELECT COUNT(1) FROM entities WHERE data_source ILIKE ' || '''%' || data_source_name || '%''' INTO current_record_count;
         EXECUTE 'SELECT COUNT(1) FROM data_ingest WHERE data_source ILIKE' || '''%' || data_source_name || '%'' OR data_source IS NULL' INTO new_record_count;
         ASSERT (new_record_count >= current_record_count), format('Number of source records (%I) must be >= number of existing records (%I).', new_record_count, current_record_count);
-
+        RAISE NOTICE E'Original record count (%).', current_record_count;
       END IF;
       
-      ---- Create temporary table to hold ingested data while we work -------------------------------
+      ------------------------------------------------------------------
+      ---- Extract and translate into temp schema ----------------------
+      ------------------------------------------------------------------
+      
+      ---- Create temporary table to hold ingested data while we work
       CREATE TEMP TABLE IF NOT EXISTS ingest_giscorps (
           "OBJECTID" text PRIMARY KEY,
           "location_id" text,
@@ -68,57 +73,9 @@ CREATE OR REPLACE FUNCTION run_data_ingest(
           "comments" text,
           "raw_data" jsonb
       );
-      TRUNCATE TABLE "ingest_giscorps" RESTART IDENTITY; -- Truncate existing table (if already existed)
+      TRUNCATE TABLE "ingest_giscorps" RESTART IDENTITY; -- Truncate existing table (if already existed for whatever reason)
 
-      -- Table Definition ----------------------------------------------
-      CREATE TEMP TABLE IF NOT EXISTS entities_proc (
-          record_id SERIAL PRIMARY KEY,
-          location_id text UNIQUE NOT NULL DEFAULT uuid_in(md5(random()::text || now()::text)::cstring),
-          is_hidden boolean NOT NULL DEFAULT true,
-          is_verified boolean NOT NULL DEFAULT false,
-          location_name text,
-          location_address_street character varying(255),
-          location_address_locality character varying(255),
-          location_address_region character varying(255),
-          location_address_postal_code character varying(255),
-          location_latitude double precision,
-          location_longitude double precision,
-          location_contact_phone_main character varying(255),
-          location_contact_phone_appointments character varying(255),
-          location_contact_phone_covid character varying(255),
-          location_contact_url_main text,
-          location_contact_url_covid_info text,
-          location_contact_url_covid_screening_tool text,
-          location_contact_url_covid_virtual_visit text,
-          location_contact_url_covid_appointments text,
-          location_place_of_service_type character varying(255),
-          location_hours_of_operation text,
-          is_evaluating_symptoms boolean,
-          is_evaluating_symptoms_by_appointment_only boolean,
-          is_ordering_tests boolean,
-          is_ordering_tests_only_for_those_who_meeting_criteria boolean,
-          is_collecting_samples boolean,
-          is_collecting_samples_onsite boolean,
-          is_collecting_samples_for_others boolean,
-          is_collecting_samples_by_appointment_only boolean,
-          is_processing_samples boolean,
-          is_processing_samples_onsite boolean,
-          is_processing_samples_for_others boolean,
-          location_specific_testing_criteria text,
-          additional_information_for_patients text,
-          reference_publisher_of_criteria text,
-          data_source text,
-          raw_data text,
-          geojson json,
-          created_on timestamp with time zone NOT NULL DEFAULT now(),
-          updated_on timestamp with time zone NOT NULL DEFAULT now(),
-          deleted_on timestamp with time zone,
-          location_status text DEFAULT 'Active'::text,
-          external_location_id text
-      );
-      TRUNCATE TABLE "entities_proc" RESTART IDENTITY; -- Truncate existing table (if already existed)
-
-      ---- Extract and translate ----------------------------------------------
+      ---- Extract and translate
       WITH source AS (
         SELECT
         "data"#>>'{attributes,OBJECTID}' AS "OBJECTID"
@@ -267,8 +224,8 @@ CREATE OR REPLACE FUNCTION run_data_ingest(
       FROM
         source
       ;
-
-      ---- Transform and load into entities_proc -------------------------------------
+      
+      ---- Transform `instructions` and `comments`
       UPDATE ingest_giscorps SET 
         "instructions" = CONCAT(
           CASE WHEN NULLIF(TRIM("managing_organization"), '') IS NOT NULL THEN CONCAT('The day-to-day operations at this location are overseen by ', TRIM("managing_organization"), '. ') ELSE NULL END 
@@ -305,8 +262,63 @@ CREATE OR REPLACE FUNCTION run_data_ingest(
         )
         ,"comments" = 'As details are changing frequently, please verify this information by contacting the testing center. If you are experiencing extreme or dangerous symptoms (including trouble breathing), seek medical attention immediately.'
       ;
-              
-      TRUNCATE TABLE "entities_proc" RESTART IDENTITY; -- First, remove all existing values
+
+      ------------------------------------------------------------------
+      ---- Transform and load into entities_proc -----------------------
+      ------------------------------------------------------------------
+      
+      ---- Create temporary table to hold ingested data while we work
+      DROP TABLE IF EXISTS entities_proc;
+      CREATE TABLE IF NOT EXISTS entities_proc (
+        record_id SERIAL PRIMARY KEY,
+        location_id text NOT NULL DEFAULT uuid_in(md5(random()::text || now()::text)::cstring),
+        is_hidden boolean NOT NULL DEFAULT true,
+        is_verified boolean NOT NULL DEFAULT false,
+        location_name text,
+        location_address_street text,
+        location_address_locality text,
+        location_address_region text,
+        location_address_postal_code text,
+        location_latitude double precision,
+        location_longitude double precision,
+        location_contact_phone_main text,
+        location_contact_phone_appointments text,
+        location_contact_phone_covid text,
+        location_contact_url_main text,
+        location_contact_url_covid_info text,
+        location_contact_url_covid_screening_tool text,
+        location_contact_url_covid_virtual_visit text,
+        location_contact_url_covid_appointments text,
+        location_place_of_service_type text,
+        location_hours_of_operation text,
+        is_evaluating_symptoms boolean,
+        is_evaluating_symptoms_by_appointment_only boolean,
+        is_ordering_tests boolean,
+        is_ordering_tests_only_for_those_who_meeting_criteria boolean,
+        is_collecting_samples boolean,
+        is_collecting_samples_onsite boolean,
+        is_collecting_samples_for_others boolean,
+        is_collecting_samples_by_appointment_only boolean,
+        is_processing_samples boolean,
+        is_processing_samples_onsite boolean,
+        is_processing_samples_for_others boolean,
+        location_specific_testing_criteria text,
+        additional_information_for_patients text,
+        reference_publisher_of_criteria text,
+        data_source text,
+        raw_data text,
+        geojson json,
+        created_on timestamp with time zone NOT NULL DEFAULT now(),
+        updated_on timestamp with time zone NOT NULL DEFAULT now(),
+        deleted_on timestamp with time zone,
+        location_status text DEFAULT 'Active'::text,
+        external_location_id text
+      );
+      TRUNCATE TABLE "entities_proc" RESTART IDENTITY; -- Truncate existing table
+      CREATE UNIQUE INDEX entities_proc_location_id_idx ON entities_proc(location_id text_ops);
+      CREATE UNIQUE INDEX entities_proc_latitude_longitude_idx ON entities_proc(location_latitude float8_ops,location_longitude float8_ops);
+      
+      
       WITH upd AS (
         SELECT
           "location_id"
@@ -671,35 +683,26 @@ CREATE OR REPLACE FUNCTION run_data_ingest(
         --     ,"location_status" = EXCLUDED."location_status"
         --     ,"external_location_id" = EXCLUDED."external_location_id"
       ;
-
-      ---- Insert into `entities` -------------------------------------
-      TRUNCATE TABLE "entities" RESTART IDENTITY; -- First, remove all existing values
-      INSERT INTO "entities"
-      SELECT 
-        *
-      FROM 
-        "entities_proc"
-      ON CONFLICT ("location_latitude","location_longitude") DO NOTHING
-      ;
-
-      UPDATE "entities"
-      SET "updated_on" = CURRENT_TIMESTAMP;
-
+      
+      ------------------------------------------------------------------
+      ---- Propagate changes and clean up          ---------------------
+      ------------------------------------------------------------------
+      
+      ---- Insert into `entities`
+      PERFORM update_entities(data_source_name) ;
+      
       ---- Clean up 
       DROP TABLE IF EXISTS ingest_giscorps;
-      DROP TABLE IF EXISTS entities_proc;
-      -- TRUNCATE TABLE "data_ingest" RESTART IDENTITY; -- Remove existing values
-      DELETE FROM data_ingest 
-      WHERE 
-        "data_source" = data_source_name OR "data_source" IS NULL;
+      
+      -- Remove processed values
+      DELETE FROM data_ingest WHERE "data_source" = data_source_name OR "data_source" IS NULL; 
 
       ---- Communicate completion
       RAISE NOTICE E'Completed ETL process for `data_source` == %', data_source_name;
-      RAISE NOTICE E'Final count (%I).', new_record_count;
-      
+
     END;
 $$
   LANGUAGE plpgsql
-  CALLED ON NULL INPUT -- the function is NOT executed when there are null arguments
+  RETURNS NULL ON NULL INPUT -- the function is NOT executed when there are null arguments
   PARALLEL UNSAFE
 ;

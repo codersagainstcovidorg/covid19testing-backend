@@ -3,6 +3,7 @@ from .models import Entities, db, gen_tz
 import json
 from flask_basicauth import BasicAuth
 from sqlalchemy import func, funcfilter, text
+from sqlalchemy.orm import load_only
 from urllib import parse
 import boto3
 from os import getenv
@@ -67,66 +68,57 @@ def list_location():
   filter_longitude = request.args.get('source_longitude')
   filter_distance = request.args.get('distance') # miles
 
+  filter_max_results = request.args.get('limit')
+  if not filter_max_results or not filter_max_results.isdigit():
+    filter_max_results = 10000 # max page size
+
+  filter_result_offset = request.args.get('offset')
+  if not filter_result_offset or not filter_result_offset.isdigit():
+    filter_result_offset = 0 # max page size
+
+  # all default fields
+  fields_to_return = [
+    'additional_information_for_patients', 'created_on', 'data_source', 'deleted_on', 'geojson', 'is_collecting_samples',
+    'is_collecting_samples_by_appointment_only', 'is_collecting_samples_for_others', 'is_collecting_samples_onsite', 'is_evaluating_symptoms',
+    'is_evaluating_symptoms_by_appointment_only', 'is_hidden', 'is_ordering_tests', 'is_ordering_tests_only_for_those_who_meeting_criteria', 
+    'is_processing_samples', 'is_processing_samples_for_others', 'is_processing_samples_onsite', 'is_verified', 'location_address_locality',
+    'location_address_postal_code', 'location_address_postal_code', 'location_address_region', 'location_address_street', 'location_contact_phone_appointments',
+    'location_contact_phone_covid', 'location_contact_phone_main', 'location_contact_url_covid_appointments', 'location_contact_url_covid_info',
+    'location_contact_url_covid_screening_tool', 'location_contact_url_covid_virtual_visit', 'location_contact_url_main', 'location_hours_of_operation',
+    'location_id', 'external_location_id', 'location_latitude', 'location_longitude', 'location_name', 'location_place_of_service_type',
+    'location_specific_testing_criteria', 'location_status', 'raw_data', 'reference_publisher_of_criteria', 'updated_on', 'record_id'
+  ]
+
+  # allow caller to request less fields (smaller payload)
+  filter_fields = request.args.get('fields')
+  if filter_fields:
+    try:
+      arr_fields = [i.strip() for i in filter_fields.split(',')]
+      fields_to_return = [f for f in arr_fields if f in fields_to_return]
+    except:
+      abort(400)
+
   if filter_latitude and filter_longitude and filter_distance:
     try:
-      table_data = Entities.query.filter(text("POINT({:f}, {:f}) <@> POINT(location_longitude, location_latitude) < {:f}".format(float(filter_longitude), float(filter_latitude), float(filter_distance))))
+      location_filter_string = text("POINT({:f}, {:f}) <@> POINT(location_longitude, location_latitude) < {:f}".format(float(filter_longitude), float(filter_latitude), float(filter_distance)))
+      table_data = Entities.query.options(load_only(*fields_to_return)) \
+        .filter(location_filter_string) \
+        .filter(Entities.is_hidden == False) \
+        .filter(Entities.is_verified == True) \
+        .limit(filter_max_results) \
+        .offset(filter_result_offset)
     except:
       abort(400)
   else:
-    table_data = Entities.query.all()
+    table_data = Entities.query.options(load_only(*fields_to_return)) \
+      .filter(Entities.is_hidden == False) \
+      .filter(Entities.is_verified == True) \
+      .limit(filter_max_results) \
+      .offset(filter_result_offset)
 
   data_list = []
-  for data in table_data:
-    if data.is_hidden is False and data.is_verified is True:
-      data_list.append(
-        {
-          'additional_information_for_patients': data.additional_information_for_patients,
-          'created_on': data.created_on,
-          'data_source': data.data_source,
-          'deleted_on': data.deleted_on,
-          'geojson': data.geojson,
-          'is_collecting_samples': data.is_collecting_samples,
-          'is_collecting_samples_by_appointment_only': data.is_collecting_samples_by_appointment_only,
-          'is_collecting_samples_for_others': data.is_collecting_samples_for_others,
-          'is_collecting_samples_onsite': data.is_collecting_samples_onsite,
-          'is_evaluating_symptoms': data.is_evaluating_symptoms,
-          'is_evaluating_symptoms_by_appointment_only': data.is_evaluating_symptoms_by_appointment_only,
-          'is_hidden': data.is_hidden,
-          'is_ordering_tests': data.is_ordering_tests,
-          'is_ordering_tests_only_for_those_who_meeting_criteria': data.is_ordering_tests_only_for_those_who_meeting_criteria,
-          'is_processing_samples': data.is_processing_samples ,
-          'is_processing_samples_for_others': data.is_processing_samples_for_others,
-          'is_processing_samples_onsite': data.is_processing_samples_onsite,
-          'is_verified': data.is_verified,
-          'location_address_locality': data.location_address_locality,
-          'location_address_postal_code': data.location_address_postal_code,
-          'location_address_region': data.location_address_region,
-          'location_address_street': data.location_address_street,
-          'location_contact_phone_appointments': data.location_contact_phone_appointments,
-          'location_contact_phone_covid': data.location_contact_phone_covid,
-          'location_contact_phone_main': data.location_contact_phone_main,
-          'location_contact_url_covid_appointments': data.location_contact_url_covid_appointments,
-          'location_contact_url_covid_info': data.location_contact_url_covid_info,
-          'location_contact_url_covid_screening_tool': data.location_contact_url_covid_screening_tool,
-          'location_contact_url_covid_virtual_visit': data.location_contact_url_covid_virtual_visit,
-          'location_contact_url_main': data.location_contact_url_main,
-          'location_hours_of_operation': data.location_hours_of_operation,
-          'location_id': data.location_id,
-          'external_location_id': data.external_location_id,
-          'location_latitude': data.location_latitude,
-          'location_longitude': data.location_longitude,
-          'location_name': data.location_name,
-          'location_place_of_service_type': data.location_place_of_service_type,
-          'location_specific_testing_criteria': data.location_specific_testing_criteria,
-          'location_status': data.location_status,
-          'raw_data': data.raw_data,
-          'reference_publisher_of_criteria': data.reference_publisher_of_criteria,
-          'updated_on': data.updated_on,
-          'record_id': data.record_id
-        }
-      )
-    else:
-      continue
+  for data in table_data.all():
+      data_list.append({f: getattr(data, f) for f in fields_to_return})
   
   response = jsonify(data_list)
   response.headers.add('Access-Control-Allow-Origin', '*')

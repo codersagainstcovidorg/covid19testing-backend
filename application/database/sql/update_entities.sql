@@ -135,7 +135,7 @@ CREATE OR REPLACE FUNCTION update_entities(
       UPDATE entities SET "external_location_id" = '' ;
       
       ---- Clean up 
-      DROP TABLE IF EXISTS entities_proc;
+      TRUNCATE TABLE entities_proc;
       
       ---- Communicate completion
       RAISE NOTICE E'Done updating data in `entities` table. Final record count: %', new_record_count;

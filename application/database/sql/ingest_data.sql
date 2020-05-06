@@ -684,6 +684,34 @@ CREATE OR REPLACE FUNCTION ingest_data(
         --     ,"external_location_id" = EXCLUDED."external_location_id"
       ;
       
+      ---- Clean up location URLs
+      UPDATE entities
+      SET "location_contact_url_main" =  REGEXP_REPLACE(TRIM(location_contact_url_main), '^(\S+(?:[\.](?:org|com|edu|gov|net|us))\S*)','https://\1', 'i')
+      WHERE
+        location_contact_url_main NOT ILIKE 'http%'
+      ;
+
+      UPDATE entities
+      SET "location_contact_url_main" = ''
+      WHERE
+        location_contact_url_main NOT ILIKE 'http%'
+      ;
+      
+      ---- Clean up health department URLs
+      UPDATE entities
+      SET "reference_publisher_of_criteria" =  REGEXP_REPLACE(TRIM(reference_publisher_of_criteria), '^(\S+(?:[\.](?:org|com|edu|gov|net|us))\S*)','https://\1', 'i')
+      WHERE
+        reference_publisher_of_criteria NOT ILIKE 'http%'
+      ;
+
+      UPDATE entities
+      SET "reference_publisher_of_criteria" = ''
+      WHERE
+        reference_publisher_of_criteria NOT ILIKE 'http%'
+      ;
+
+
+      
       ------------------------------------------------------------------
       ---- Propagate changes and clean up          ---------------------
       ------------------------------------------------------------------

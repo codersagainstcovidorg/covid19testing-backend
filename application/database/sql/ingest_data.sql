@@ -437,14 +437,16 @@ CREATE OR REPLACE FUNCTION ingest_data(
                 'is_drive_through', "is_drive_through"
                 ,'is_flagged', "is_flagged"
                 -- ,'test_kind', (COALESCE(LOWER(TRIM("test_kind")), ''))
-                ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both'))
-                ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('molecular', 'both'))
                 ,'is_same_day_result', (COALESCE(LOWER(TRIM("test_processing")), '') IN ('point-of-care'))
+                ,'is_temporary', ((("period_end"::DATE - CURRENT_DATE) - ("period_start"::DATE - CURRENT_DATE)) = 0)
                 ,'is_scheduled_to_open', ("period_start"::DATE > CURRENT_DATE)
                 ,'is_scheduled_to_close', ("period_end"::text) NOT LIKE ('9999%')
-                ,'is_temporary', ((("period_end"::DATE - CURRENT_DATE) - ("period_start"::DATE - CURRENT_DATE)) = 0)
                 ,'days_remaining_until_open', GREATEST(("period_start"::DATE - CURRENT_DATE), 0)
                 ,'days_remaining_until_close', ("period_end"::DATE - CURRENT_DATE)
+                ,'period_start', "period_start"
+                ,'period_end', "period_end"
+                ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both'))
+                ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('molecular', 'both'))
               ) -- || "raw_data"::jsonb
             ) AS "raw_data"
             ,NULL::jsonb AS "geojson"
@@ -709,8 +711,68 @@ CREATE OR REPLACE FUNCTION ingest_data(
       WHERE
         reference_publisher_of_criteria NOT ILIKE 'http%'
       ;
+      
+      ---- Clean up dates of service
+      UPDATE entities -- Should be 'Scheduled to Open'
+      SET "location_status" = 'Scheduled to Open'
+      WHERE
+        "location_status" NOT IN ('Scheduled to Open', 'Testing Restricted', 'Temporarily Closed', 'Closed', 'Impacted')
+        AND "location_name" NOT ILIKE '%quest%'
+        AND ("raw_data"::jsonb ->> 'period_start')::DATE > CURRENT_DATE
+        AND ("raw_data"::jsonb ->> 'period_end')::DATE <> '9999-12-31'
+        AND ("raw_data"::jsonb ->> 'period_end')::DATE >= CURRENT_DATE
+      ;
 
+      UPDATE entities -- Should be 'Scheduled to Close'
+      SET "location_status" = 'Scheduled to Close'
+      WHERE
+        location_status NOT IN ('Scheduled to Close', 'Scheduled to Open','Testing Restricted', 'Temporarily Closed', 'Closed', 'Impacted')
+        AND "location_name" NOT ILIKE '%quest%'
+        AND ("raw_data"::jsonb ->> 'period_start')::DATE >= CURRENT_DATE
+        AND ("raw_data"::jsonb ->> 'period_end')::DATE <> '9999-12-31'
+        AND ("raw_data"::jsonb ->> 'days_remaining_until_close')::INT <= 7
+        AND ("raw_data"::jsonb ->> 'days_remaining_until_open')::INT <> ("raw_data"::jsonb ->> 'days_remaining_until_close')::INT
+        AND ("raw_data"::jsonb ->> 'period_end')::DATE >= CURRENT_DATE
+      ;
 
+      UPDATE entities -- Should be 'Open'
+      SET location_status = 'Open'
+      WHERE
+        location_status NOT IN ('Open','Scheduled to Close','Testing Restricted', 'Temporarily Closed', 'Closed', 'Impacted')
+        AND "location_name" NOT ILIKE '%quest%'
+        AND (CURRENT_DATE - ("raw_data"::jsonb ->> 'period_start')::DATE) <= 7
+        AND ("raw_data"::jsonb ->> 'days_remaining_until_open')::INT <= 0
+      ;
+
+      UPDATE entities -- Should be 'Closed'
+      SET location_status = 'Scheduled to Open'
+      WHERE
+        location_status NOT IN ('Closed','Temporarily Closed')
+        AND "location_name" NOT ILIKE '%quest%'
+        AND ("raw_data"::jsonb ->> 'period_end')::DATE <> '9999-12-31'
+        AND (("raw_data"::jsonb ->> 'period_end')::DATE - CURRENT_DATE) < 0
+      ;
+
+      ---- Clean up phone numbers
+      WITH upd_phone AS (
+        SELECT DISTINCT
+          location_id
+          ,main_6 AS "main"
+        FROM
+          entities
+          ,regexp_replace(location_contact_phone_main, '[\+\s\-\.\(\)‐]', '', 'gim') AS "main_0"
+          ,regexp_replace(main_0, '^([a-zA-Z]+.+)', '', 'gim') AS "main_1"
+          ,regexp_replace(main_1, '^1?(\w{3,10})', '\1', 'gim') AS "main_2"
+          ,regexp_replace(main_2, '^[a-zA-Z ]+', '', 'gim') AS "main_3"
+          ,regexp_replace(main_3, '^(\d{3})(\d{3})(\d{4})', '\1-\2-\3', 'gim') AS "main_4"
+          ,regexp_replace(main_4, '^(\d+(?=\D+))(\D+)$', '\1-\2', 'gim') AS "main_5"
+          ,regexp_replace(main_5, '^(\d+\D+\d\D+)$', '', 'gim') AS "main_6"
+      )
+      UPDATE entities
+      SET location_contact_phone_main = main
+      FROM upd_phone
+      WHERE entities.location_id = upd_phone.location_id
+      ;
       
       ------------------------------------------------------------------
       ---- Propagate changes and clean up          ---------------------

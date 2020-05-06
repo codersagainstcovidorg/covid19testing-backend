@@ -697,33 +697,33 @@
         ;
         
         ---- Clean up location URLs
-        UPDATE entities
+        UPDATE entities_proc
         SET "location_contact_url_main" =  REGEXP_REPLACE(TRIM(location_contact_url_main), '^(\S+(?:[\.](?:org|com|edu|gov|net|us))\S*)','https://\1', 'i')
         WHERE
           location_contact_url_main NOT ILIKE 'http%'
         ;
 
-        UPDATE entities
+        UPDATE entities_proc
         SET "location_contact_url_main" = ''
         WHERE
           location_contact_url_main NOT ILIKE 'http%'
         ;
         
         ---- Clean up health department URLs
-        UPDATE entities
+        UPDATE entities_proc
         SET "reference_publisher_of_criteria" =  REGEXP_REPLACE(TRIM(reference_publisher_of_criteria), '^(\S+(?:[\.](?:org|com|edu|gov|net|us))\S*)','https://\1', 'i')
         WHERE
           reference_publisher_of_criteria NOT ILIKE 'http%'
         ;
 
-        UPDATE entities
+        UPDATE entities_proc
         SET "reference_publisher_of_criteria" = ''
         WHERE
           reference_publisher_of_criteria NOT ILIKE 'http%'
         ;
         
         ---- Clean up dates of service
-        UPDATE entities -- Should be 'Scheduled to Open'
+        UPDATE entities_proc -- Should be 'Scheduled to Open'
         SET "location_status" = 'Scheduled to Open'
         WHERE
           "location_status" NOT IN ('Scheduled to Open', 'Testing Restricted', 'Temporarily Closed', 'Closed', 'Impacted')
@@ -733,7 +733,7 @@
           AND ("raw_data"::jsonb ->> 'period_end')::DATE >= CURRENT_DATE
         ;
 
-        UPDATE entities -- Should be 'Scheduled to Close'
+        UPDATE entities_proc -- Should be 'Scheduled to Close'
         SET "location_status" = 'Scheduled to Close'
         WHERE
           location_status NOT IN ('Scheduled to Close', 'Scheduled to Open','Testing Restricted', 'Temporarily Closed', 'Closed', 'Impacted')
@@ -745,7 +745,7 @@
           AND ("raw_data"::jsonb ->> 'period_end')::DATE >= CURRENT_DATE
         ;
 
-        UPDATE entities -- Should be 'Open'
+        UPDATE entities_proc -- Should be 'Open'
         SET location_status = 'Open'
         WHERE
           location_status NOT IN ('Open','Scheduled to Close','Testing Restricted', 'Temporarily Closed', 'Closed', 'Impacted')
@@ -754,7 +754,7 @@
           AND ("raw_data"::jsonb ->> 'days_remaining_until_open')::INT <= 0
         ;
 
-        UPDATE entities -- Should be 'Closed'
+        UPDATE entities_proc -- Should be 'Closed'
         SET location_status = 'Scheduled to Open'
         WHERE
           location_status NOT IN ('Closed','Temporarily Closed')
@@ -769,7 +769,7 @@
             location_id
             ,main_6 AS "main"
           FROM
-            entities
+            entities_proc
             ,regexp_replace(location_contact_phone_main, '[\+\s\-\.\(\)‐]', '', 'gim') AS "main_0"
             ,regexp_replace(main_0, '^([a-zA-Z]+.+)', '', 'gim') AS "main_1"
             ,regexp_replace(main_1, '^1?(\w{3,10})', '\1', 'gim') AS "main_2"
@@ -778,10 +778,10 @@
             ,regexp_replace(main_4, '^(\d+(?=\D+))(\D+)$', '\1-\2', 'gim') AS "main_5"
             ,regexp_replace(main_5, '^(\d+\D+\d\D+)$', '', 'gim') AS "main_6"
         )
-        UPDATE entities
+        UPDATE entities_proc
         SET location_contact_phone_main = main
         FROM upd_phone
-        WHERE entities.location_id = upd_phone.location_id
+        WHERE entities_proc.location_id = upd_phone.location_id
         ;
         
         ------------------------------------------------------------------

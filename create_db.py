@@ -24,7 +24,7 @@ def get_param(param_name, decrypt=True):
 
 app.config["SQLALCHEMY_DATABASE_URI"] = get_param("SQLALCHEMY_DATABASE_URI") if getenv("ENVIRONMENT") is not None else getenv("SQLALCHEMY_DATABASE_URI")
 
-extensions_query = text('CREATE EXTENSION if not EXISTS cube; CREATE EXTENSION if not EXISTS earthdistance;')
+extensions_query = text('CREATE EXTENSION if not EXISTS cube; CREATE EXTENSION if not EXISTS earthdistance; CREATE EXTENSION IF NOT EXISTS unaccent;')
 
 with app.app_context():
   from application.database import models

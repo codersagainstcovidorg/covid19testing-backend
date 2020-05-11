@@ -45,7 +45,98 @@ CREATE OR REPLACE FUNCTION update_entities(
       
       ---- Insert into `entities`
       -- TRUNCATE TABLE "entities" RESTART IDENTITY; -- First, remove all existing values
-      INSERT INTO "entities" (
+      WITH updated_entities AS (
+        SELECT
+          "location_id"
+          ,"is_hidden"
+          ,"is_verified"
+          ,"location_name"
+          ,"location_address_street"
+          ,"location_address_locality"
+          ,"location_address_region"
+          ,"location_address_postal_code"
+          ,"location_latitude"
+          ,"location_longitude"
+          ,"location_contact_phone_main"
+          ,"location_contact_phone_appointments"
+          ,"location_contact_phone_covid"
+          ,"location_contact_url_main"
+          ,"location_contact_url_covid_info"
+          ,"location_contact_url_covid_screening_tool"
+          ,"location_contact_url_covid_virtual_visit"
+          ,"location_contact_url_covid_appointments"
+          ,"location_place_of_service_type"
+          ,"location_hours_of_operation"
+          ,"is_evaluating_symptoms"
+          ,"is_evaluating_symptoms_by_appointment_only"
+          ,"is_ordering_tests"
+          ,"is_ordering_tests_only_for_those_who_meeting_criteria"
+          ,"is_collecting_samples"
+          ,"is_collecting_samples_onsite"
+          ,"is_collecting_samples_for_others"
+          ,"is_collecting_samples_by_appointment_only"
+          ,"is_processing_samples"
+          ,"is_processing_samples_onsite"
+          ,"is_processing_samples_for_others"
+          ,"location_specific_testing_criteria"
+          ,"additional_information_for_patients"
+          ,"reference_publisher_of_criteria"
+          ,"data_source"
+          ,"created_on"
+          ,"updated_on"
+          ,"deleted_on"
+          ,"raw_data"
+          ,"location_status"
+          ,"external_location_id"
+        FROM 
+          "entities_proc"
+        WHERE
+          ("is_hidden" = FALSE) 
+          AND ("is_verified" = TRUE)
+        GROUP BY
+          "location_id"
+          ,"is_hidden"
+          ,"is_verified"
+          ,"location_name"
+          ,"location_address_street"
+          ,"location_address_locality"
+          ,"location_address_region"
+          ,"location_address_postal_code"
+          ,"location_latitude"
+          ,"location_longitude"
+          ,"location_contact_phone_main"
+          ,"location_contact_phone_appointments"
+          ,"location_contact_phone_covid"
+          ,"location_contact_url_main"
+          ,"location_contact_url_covid_info"
+          ,"location_contact_url_covid_screening_tool"
+          ,"location_contact_url_covid_virtual_visit"
+          ,"location_contact_url_covid_appointments"
+          ,"location_place_of_service_type"
+          ,"location_hours_of_operation"
+          ,"is_evaluating_symptoms"
+          ,"is_evaluating_symptoms_by_appointment_only"
+          ,"is_ordering_tests"
+          ,"is_ordering_tests_only_for_those_who_meeting_criteria"
+          ,"is_collecting_samples"
+          ,"is_collecting_samples_onsite"
+          ,"is_collecting_samples_for_others"
+          ,"is_collecting_samples_by_appointment_only"
+          ,"is_processing_samples"
+          ,"is_processing_samples_onsite"
+          ,"is_processing_samples_for_others"
+          ,"location_specific_testing_criteria"
+          ,"additional_information_for_patients"
+          ,"reference_publisher_of_criteria"
+          ,"data_source"
+          ,"created_on"
+          ,"updated_on"
+          ,"deleted_on"
+          ,"raw_data"
+          ,"location_status"
+          ,"external_location_id"
+      )
+      INSERT INTO "entities" AS "entities" (
         "location_id"
         ,"is_hidden"
         ,"is_verified"
@@ -88,7 +179,7 @@ CREATE OR REPLACE FUNCTION update_entities(
         ,"location_status"
         ,"external_location_id"
       )
-      SELECT DISTINCT
+      SELECT 
         "location_id"
         ,"is_hidden"
         ,"is_verified"
@@ -130,9 +221,8 @@ CREATE OR REPLACE FUNCTION update_entities(
         ,"raw_data"
         ,"location_status"
         ,"external_location_id"
-      FROM 
-        "entities_proc"
-      ON CONFLICT ("location_id","external_location_id") DO UPDATE
+      FROM "updated_entities"
+      ON CONFLICT ("location_id") DO UPDATE
         SET
           "location_id" = EXCLUDED."location_id"
           ,"is_hidden" = EXCLUDED."is_hidden"
@@ -171,7 +261,7 @@ CREATE OR REPLACE FUNCTION update_entities(
           ,"data_source" = EXCLUDED."data_source"
           ,"raw_data" = EXCLUDED."raw_data"
           ,"geojson" = EXCLUDED."geojson"
-          -- ,"created_on" = EXCLUDED."created_on"
+          ,"created_on" = EXCLUDED."created_on"
           ,"updated_on" = CURRENT_TIMESTAMP
           ,"deleted_on" = EXCLUDED."deleted_on"
           ,"location_status" = EXCLUDED."location_status"
@@ -247,6 +337,8 @@ CREATE OR REPLACE FUNCTION update_entities(
       UPDATE entities SET "geojson" = NULL::json WHERE "geojson" IS NULL;
 
       UPDATE entities SET "location_status" = 'Invalid' WHERE "location_status" IS NULL;
+      
+      UPDATE entities SET "is_hidden" = TRUE WHERE "location_name" = '';
 
       -- UPDATE entities SET "external_location_id" = '' ;
       

@@ -9,12 +9,13 @@
 --   None
 
 CREATE OR REPLACE FUNCTION make_slug(
-    IN fromString                                 text
+    IN fromString         text
+    ,IN prefix            text DEFAULT ''
   )
   RETURNS TEXT
   AS $$
     DECLARE
-      slug TEXT := fromString;
+      slug TEXT := CONCAT(prefix, ' ', fromString);
     BEGIN
       -- SELECT unaccent(fromString) INTO slug; -- Removes accents (diacritic signs)
       SELECT lower(TRIM(slug)) INTO slug; -- Make lowercase and trim leading and trailing spaces

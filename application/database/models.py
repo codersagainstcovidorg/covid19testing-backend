@@ -99,7 +99,7 @@ class Entities(db.Model):
   location_place_of_service_type = db.Column(db.String(255),
                   nullable=True)
   # "location_hours_of_operation" VARCHAR(255) DEFAULT NULL,
-  location_hours_of_operation = db.Column(db.String(255),
+  location_hours_of_operation = db.Column(db.Text,
                   nullable=True)
   # "is_evaluating_symptoms" BOOLEAN,
   is_evaluating_symptoms = db.Column(db.Boolean,
@@ -177,3 +177,6 @@ class Entities(db.Model):
   # "location_status" TEXT DEFAULT 'Active'::text,
   location_status = db.Column(db.Text,
                   nullable=True)
+  # "external_location_id" TEXT
+  external_location_id = db.Column(db.Text,
+                              nullable=True)

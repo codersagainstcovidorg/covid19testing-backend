@@ -11,19 +11,10 @@
     )
     RETURNS VOID
     AS $$
-      DECLARE
-        current_record_count INTEGER ;
-        new_record_count INTEGER;
       BEGIN
         -- Make sure that we don't inadvertently wipe the DB
         IF (data_source_name NOT ILIKE '%giscorps%') THEN 
           RAISE EXCEPTION E'`Unrecognized data source: `%`', data_source_name;
-        ELSE
-          RAISE NOTICE E'Starting ETL process for `data_source` == %', data_source_name;
-          EXECUTE 'SELECT COUNT(1) FROM entities WHERE data_source ILIKE ' || '''%' || data_source_name || '%''' INTO current_record_count;
-          EXECUTE 'SELECT COUNT(1) FROM data_ingest WHERE data_source ILIKE' || '''%' || data_source_name || '%'' OR data_source IS NULL' INTO new_record_count;
-          ASSERT (new_record_count >= current_record_count), format('Number of source records (%I) must be >= number of existing records (%I).', new_record_count, current_record_count);
-          RAISE NOTICE E'Original record count (%).', current_record_count;
         END IF;
         
         ------------------------------------------------------------------
@@ -139,10 +130,14 @@
             WHEN ((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision IS NOT NULL) AND (COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision IS NOT NULL))
             THEN uuid_in(
               md5(
-                ((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision)::text || (COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision)::text)
+                (
+                  "OBJECTID" ||
+                  round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 6)::text || 
+                  round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 6)::text
+                )
                 )::cstring
               ) 
-            ELSE uuid_in(md5(random()::text || now()::text)::cstring)
+            ELSE NULL
           END AS "location_id",
           
           COALESCE(TRIM("attr"#>>'{name}'), '') AS "name",
@@ -216,9 +211,9 @@
           
           TRIM("attr"#>>'{State}') AS "State",
           
-          COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision AS "lat",
+          round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 6) AS "lat",
           
-          COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision AS "long",
+          round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 6) AS "long",
           
           TRIM("attr"#>>'{vol_note}') AS "vol_note",
           
@@ -287,8 +282,8 @@
           location_address_locality text,
           location_address_region text,
           location_address_postal_code text,
-          location_latitude double precision,
-          location_longitude double precision,
+          location_latitude numeric,
+          location_longitude numeric,
           location_contact_phone_main text,
           location_contact_phone_appointments text,
           location_contact_phone_covid text,
@@ -324,8 +319,7 @@
         );
         TRUNCATE TABLE "entities_proc" RESTART IDENTITY; -- Truncate existing table
         CREATE UNIQUE INDEX entities_proc_location_id_idx ON entities_proc(location_id text_ops);
-        CREATE UNIQUE INDEX entities_proc_latitude_longitude_idx ON entities_proc(location_latitude float8_ops,location_longitude float8_ops);
-        
+        CREATE UNIQUE INDEX entities_proc_location_id_external_location_id_idx ON entities_proc(location_id text_ops, external_location_id text_ops);
         
         WITH upd AS (
           SELECT
@@ -464,17 +458,7 @@
               ,"EditDate" AS "updated_on"
               ,CASE WHEN "status" = 'Closed' THEN "EditDate" ELSE NULL END AS "deleted_on"
               ,"status" AS "location_status"
-              ,jsonb_strip_nulls(jsonb_build_array(
-                CASE WHEN NULLIF(TRIM("OBJECTID"), '') IS NOT NULL THEN jsonb_build_object(
-                  'use','primary'
-                  ,'kind','esriFieldTypeOID'
-                  ,'system','Esri'
-                  ,'field','OBJECTID'
-                  ,'alias','OBJECTID'
-                  ,'assigner','GISCorps'
-                  ,'value',NULLIF(TRIM("OBJECTID"), '')
-                ) ELSE NULL END
-              )) AS "external_location_id"
+              ,"OBJECTID" AS "external_location_id"
             FROM
               ingest_giscorps
             WHERE
@@ -607,6 +591,9 @@
           ,"external_location_id"
         FROM 
           upd
+        WHERE
+          ("location_latitude" IS NOT NULL) AND
+          ("location_longitude" IS NOT NULL)
         GROUP BY
           "location_id"
           ,"is_hidden"
@@ -802,7 +789,7 @@
 
       END;
   $$
-    LANGUAGE plpgsql
-    RETURNS NULL ON NULL INPUT -- the function is NOT executed when there are null arguments
-    PARALLEL UNSAFE
-  ;
+  LANGUAGE plpgsql
+  RETURNS NULL ON NULL INPUT -- the function is NOT executed when there are null arguments
+  PARALLEL UNSAFE
+;

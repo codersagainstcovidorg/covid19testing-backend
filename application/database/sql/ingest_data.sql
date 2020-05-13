@@ -246,7 +246,7 @@
             ,CASE 
               WHEN "test_kind" IN ('molecular') THEN 'This location offers molecular-based testing options, which are authorized by the FDA to diagnose or to rule out COVID-19. To our knowledge, antibody testing is not offered at this location.'
               WHEN "test_kind" IN ('both') THEN 'Although multiple testing options are offered at this location, please note that antibody tests are NOT authorized by the FDA to rule out COVID-19. This location also offers molecular-based options, which ARE authorized by the FDA for this purpose. '
-              WHEN "test_kind" IN ('antibody','antibody-poc') THEN 'WARNING: This location DOES NOT appear to offer FDA-authorized tests for persons looking to definitely rule out COVID-19 infection. As of April 20, NO ANTIBODY TEST IS AUTHORIZED by the FDA to rule out COVID-19, a separate molecular-based test must be performed. '
+              WHEN "test_kind" IN ('antibody','antibody-poc') THEN 'WARNING: This location DOES NOT appear to offer FDA-authorized tests for persons looking to definitely rule out COVID-19 infection. NO ANTIBODY TEST IS AUTHORIZED by the FDA to rule out COVID-19, a separate molecular-based test must be performed. '
               WHEN "test_kind" IN ('not specified', 'needs more research') THEN 'There is insufficient information to determine which testing options are offered at this location. '
             ELSE NULL END
 

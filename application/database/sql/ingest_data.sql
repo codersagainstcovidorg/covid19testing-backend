@@ -447,8 +447,8 @@
                   ,'days_remaining_until_close', ("period_end"::DATE - CURRENT_DATE)
                   ,'period_start', "period_start"
                   ,'period_end', "period_end"
-                  ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both'))
-                  ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('molecular', 'both'))
+                  ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both', 'molecular and antibody'))
+                  ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('molecular', 'both', 'molecular and antibody'))
                   ,'vol_note', COALESCE(TRIM("vol_note"), '')
                   ,'fine_print', COALESCE(TRIM("fine_print"), '')
                 ) -- || "raw_data"::jsonb

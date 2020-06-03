@@ -127,16 +127,18 @@
           -- "facilityid",
           -- "GlobalID",
           CASE
+            WHEN (NULLIF(TRIM("OBJECTID"::TEXT), '') IS NOT NULL)
+              THEN uuid_in(md5((TRIM("OBJECTID"::TEXT)))::cstring)
             WHEN ((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision IS NOT NULL) AND (COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision IS NOT NULL))
-            THEN uuid_in(
-              md5(
-                (
-                  "OBJECTID" ||
-                  round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 6)::text || 
-                  round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 6)::text
+              THEN uuid_in(
+                md5(
+                  (
+                    "OBJECTID" ||
+                    round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 6)::text || 
+                    round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 6)::text
+                  )
+                  )::cstring
                 )
-                )::cstring
-              ) 
             ELSE NULL
           END AS "location_id",
           
@@ -643,7 +645,6 @@
           ,"raw_data"
           ,"location_status"
           ,"external_location_id"
-        -- ON CONFLICT ("location_id") DO NOTHING
           ON CONFLICT ("location_id") DO UPDATE
             SET
               "location_id" = md5(CONCAT('DUPLICATE|',entities."location_latitude",'|',entities."location_longitude"))::uuid

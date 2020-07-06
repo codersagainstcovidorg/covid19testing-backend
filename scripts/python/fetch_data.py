@@ -1,15 +1,16 @@
 #!/usr/bin/env python
+import os
 import pandas as pd
-# from urllib.request import Request
 import requests
 import json
 import csv
 import jq
 import time
 
-# Set the destination
-DEST_BASE_DOWNLOADS = ''
-DEST_BASE_GISCORPS = ''
+# Get environment variables
+DEST_BASE_DOWNLOADS = os.getenv('DEST_BASE_DOWNLOADS')
+DEST_BASE_GISCORPS = os.getenv('DEST_BASE_GISCORPS')
+DEST_BASE_USAFACTS = os.getenv('DEST_BASE_USAFACTS')
 
 timestr = time.strftime("%Y-%m-%dT%H%M") # timestr = time.strftime("%Y-%m-%dT%H%M")
 
@@ -89,8 +90,39 @@ giscorps_proc_csv_filtered_bq = {
     "melt_params": None
 }
 
+# USAFacts Cases Raw
+usafacts_cases_raw_csv = {
+    "src_name": 'USAFacts.org Cases Raw',
+    "src_path": 'https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv',
+    "src_path_type": "url",
+    "src_format": 'csv',
+
+    "dst_path": f'{DEST_BASE_USAFACTS}/Cases/Counties/USAFacts/{timestr}covid_confirmed_usafacts.csv',
+    "dst_path_type": "file",
+    "dst_format": 'csv',
+    "does_need_proc": False,
+    "jqstr": None,
+    "melt_params": None
+}
+
+# USAFacts Cases Processed
+usafacts_cases_proc_csv = {
+    "src_name": 'USAFacts.org Cases Processed',
+    "src_path": 'https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv',
+    "src_path_type": "url",
+    "src_format": 'csv',
+
+    "dst_path": f'{DEST_BASE_DOWNLOADS}/covid_confirmed_usafacts.csv',
+    "dst_path_type": "file",
+    "dst_format": 'csv',
+    "does_need_proc": True,
+    "jqstr": None,
+    "melt_params": {"id_vars": ['countyFIPS', 'County Name', 'State', 'stateFIPS'], "var_name": 'date', "value_name": 'count_covid_cases'}
+}
+
+
 # [giscorps_raw_csv, giscorps_raw_json_full, giscorps_raw_json_filtered, giscorps_proc_json_filtered, giscorps_proc_csv_filtered_bq]
-url_list = [giscorps_raw_csv]
+url_list = [usafacts_cases_proc_csv]
 
 
 def get_data(src: dict, dst_path_prefix: str = timestr):
@@ -112,20 +144,21 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
   jqstr = src["jqstr"]
   melt_params = src["melt_params"]
   
-  # Open data if source is file
   if src_path_type == 'file':
+    # Open data if source is file
     with open(src_path, 'rb') as f:
-        print(f'Reading `{src_name}` from `{src_path}` ...\n')
-        f.read()
-  # Get data if source is URL
+      print(f'Reading `{src_name}` from `{src_path}` ...\n')
+      f.read()
   elif src_path_type == 'url':
     print(f'Getting `{src_name}` from `{src_path}` ...\n')
-    # Make the request
+    # Fetch the data
     src_connector = requests.get(src_path, headers=myHeaders)
+    src_data = src_connector.content
+    dst_data = json.dumps(src_data)
     
     if src_format == 'json':
-      src_data = json.loads(src_connector.content)
-      dst_data = json.dumps(src_data)
+      # src_data = json.loads(src_connector.content)
+      # dst_data = json.dumps(src_data)
       
       # Transform data, if necessary
       if does_need_proc == True:
@@ -190,14 +223,15 @@ def transform_data(src_name: str, src_data, src_format: str, dst_format: str, jq
   elif src_format == 'csv':
     # Re-shaping, converting, filtering, sorting, etc.
     if dst_format == 'csv':
-      if (melt_params.values().count > 0):
+      if (len(melt_params.items()) > 0):
         id_vars = melt_params["id_vars"]
         var_name = melt_params["var_name"]
         value_name = melt_params["value_name"]
         
         print(f'Transforming data: `{src_format}` -> `{dst_format}` ...')
         # read the normalized data
-        df = pd.read_csv(src_data)
+        # data = urlopen(src_data.raw)
+        df = pd.read_csv(src_data.all)
 
         # melt the normalized file
         le = pd.melt(df, id_vars=id_vars, var_name=var_name,
@@ -240,6 +274,11 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
           wr.writerows(dst_data)
         print(f'SUCCESS | Done writing to `{dst_path}`\n')
         return
+    elif dst_format == 'json':
+      print(f'Writing to `{dst_path}` ...\n')
+      open(dst_path, 'w').write(dst_data)
+      print(f'SUCCESS | Done writing to `{dst_path}`\n')
+      return
     elif dst_format == 'jsonl':
       print(f'Writing to `{dst_path}` ...\n')
       with open(dst_path, 'w', encoding='utf-8', newline='') as f:
@@ -248,7 +287,6 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
     else:
       print(f'ERROR | Failed writing to `{dst_path}`: destination format `{dst_format}` not recognized\n')
       return
-    
   else:
       print(f'ERROR | Failed writing to `{dst_path}`: destination type `{dst_path_type}` not recognized\n')
       return

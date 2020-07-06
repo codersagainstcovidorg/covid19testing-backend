@@ -123,8 +123,8 @@ usafacts_cases_proc_csv = {
 }
 
 
-# [giscorps_raw_csv, giscorps_raw_json_full, giscorps_raw_json_filtered, giscorps_proc_json_filtered, giscorps_proc_csv_filtered_bq]
-url_list = [giscorps_proc_csv_filtered_bq]
+# [giscorps_raw_csv, giscorps_raw_json_full, giscorps_raw_json_filtered, giscorps_proc_json_filtered, giscorps_proc_csv_filtered_bq, usafacts_cases_raw_csv, usafacts_cases_proc_csv]
+url_list = [giscorps_raw_csv]
 
 
 def get_data(src: dict, dst_path_prefix: str = timestr):
@@ -155,13 +155,15 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
     print(f'Getting `{src_name}` from `{src_path}` ...\n')
     # Fetch data from URL
     src_connector = requests.get(src_path, headers=myHeaders)
-    src_data = src_connector.content
+    src_data = src_connector
     dst_data = src_connector
 
     # Transform data, if necessary
     if does_need_proc == True:
         dst_data = transform_data(src_name, src_data, src_format, dst_format, jqstr, melt_params)  # .all()[0:3]
-
+    
+    print(f'\ndst_data: {type(dst_data)}\n')
+    
     if src_format == 'json':
       # Write the value to its destination
       request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
@@ -182,6 +184,9 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
 def transform_data(src_name: str, src_data, src_format: str, dst_format: str, jqstr: str, melt_params: dict = {}):
   # Transform data from json -> ???
   if src_format == 'json':
+    # Extract the data
+    raw_json = src_data.json()
+    
     # Re-shaping, converting, filtering, sorting, etc.
     if dst_format == 'csv':
       print(f'Transforming data: `{src_format}` -> `{dst_format}` ...')
@@ -190,13 +195,13 @@ def transform_data(src_name: str, src_data, src_format: str, dst_format: str, jq
       # " | (map(keys) | add | unique) as $cols | map(. as $row | $cols | map($row[.])) as $rows | $cols, $rows[] | @csv"
 
       # Overwrite the variable assignment using the transformed result
-      return jq.compile(proc_jqstr).input(src_data)
+      return jq.compile(proc_jqstr).input(raw_json)
 
     elif dst_format.startswith('json'):
       print(f'Transforming data: `{src_format}` -> `{dst_format}` ...')
       proc_jqstr = (jqstr if (len(jqstr) > 2) else '.')
       # Overwrite the variable assignment using the transformed result
-      return jq.compile(proc_jqstr).input(src_data)
+      return jq.compile(proc_jqstr).input(raw_json)
     # Otherwise return the source data unchanged
     else:
       print(
@@ -205,7 +210,7 @@ def transform_data(src_name: str, src_data, src_format: str, dst_format: str, jq
   # Transform data from csv -> ???
   elif src_format == 'csv':
     # Extract the data
-    df = pd.read_csv(io.StringIO(src_data.decode('utf-8')))
+    df = pd.read_csv(io.StringIO(src_data.content.decode('utf-8')))
 
     # Re-shaping, converting, filtering, sorting, etc.
     if dst_format == 'csv':
@@ -262,6 +267,12 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
         df.to_csv(dst_path, sep=',', index=False)
         print(f'Done.\n')
         return
+      elif isinstance(dst_data, jq._ProgramWithInput):
+        print(f'Writing to `{dst_path}` ...')
+        with open(dst_path, 'w', encoding='utf-8', newline='') as f:
+          wr = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+          wr.writerows(dst_data)
+        print(f'Done.\n')
       else:
         print(f'\nERROR | Failed writing to `{dst_path}`\n')
         return
@@ -277,16 +288,20 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
       #     wr.writerows(dst_data)
       #   print(f'SUCCESS | Done writing to `{dst_path}`\n')
       #   return
-    elif dst_format == 'json':
-      print(f'Writing to `{dst_path}` ...\n')
-      open(dst_path, 'w').write(dst_data)
-      print(f'SUCCESS | Done writing to `{dst_path}`\n')
-      return
-    elif dst_format == 'jsonl':
-      print(f'Writing to `{dst_path}` ...\n')
-      with open(dst_path, 'w', encoding='utf-8', newline='') as f:
-        f.writelines(dst_data.text())
-      return 'SUCCESS | Done writing to `{dst_path}`\n'
+    elif dst_format.startswith('json'):
+      if isinstance(dst_data, requests.Response):
+        # Write the data
+        print(f'Writing data to `{dst_path}` ...')
+        with open(dst_path, 'wb') as f:
+          f.write(dst_data.content)
+        print(f'Done.\n')
+        return
+      elif isinstance(dst_data, jq._ProgramWithInput):
+        print(f'Writing to `{dst_path}` ...')
+        with open(dst_path, 'w', encoding='utf-8', newline='') as f:
+          f.writelines(dst_data.text())
+        print(f'Done.\n')
+        return
     else:
       print(
           f'ERROR | Failed writing to `{dst_path}`: destination format `{dst_format}` not recognized\n')

@@ -128,11 +128,13 @@ def list_location():
 
   if filter_latitude and filter_longitude and filter_distance:
     try:
-      location_filter_string = text("POINT({:f}, {:f}) <@> POINT(location_longitude, location_latitude) < {:f}".format(float(filter_longitude), float(filter_latitude), float(filter_distance)))
+      distance_string = "POINT({:f}, {:f}) <@> POINT(location_longitude, location_latitude)".format(float(filter_longitude), float(filter_latitude))
+      location_filter_string = text("{:s} < {:f}".format(distance_string, float(filter_distance)))
       table_data = Entities.query.options(load_only(*fields_to_return)) \
         .filter(location_filter_string) \
         .filter(Entities.is_hidden == False) \
         .filter(Entities.is_verified == True) \
+        .order_by(text(distance_string)) \
         .limit(filter_max_results) \
         .offset(filter_result_offset)
     except:

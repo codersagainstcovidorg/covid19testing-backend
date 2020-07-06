@@ -152,7 +152,7 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
       print(f'Reading `{src_name}` from `{src_path}` ...\n')
       f.read()
   elif src_path_type == 'url':
-    print(f'Getting `{src_name}` from `{src_path}` ...\n')
+    print(f'\nGetting `{src_name}` from `{src_path}` ...')
     # Fetch data from URL
     src_connector = requests.get(src_path, headers=myHeaders)
     src_data = src_connector
@@ -162,22 +162,13 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
     if does_need_proc == True:
         dst_data = transform_data(src_name, src_data, src_format, dst_format, jqstr, melt_params)  # .all()[0:3]
     
-    print(f'\ndst_data: {type(dst_data)}\n')
+    # print(f'\ndst_data: {type(dst_data)}\n')
     
-    if src_format == 'json':
-      # Write the value to its destination
-      request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
-    elif src_format == 'csv':
-      # Write the value to its destination
-      request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
-    else:
-      print(
-          f'ERROR | Unknown or unrecognized value for `src_path_type`: {src_path_type}')
-      return
-  # Display error
+    # Write the value to its destination
+    request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
   else:
     print(
-        f'ERROR | Unknown or unrecognized value for `src_path_type`: {src_path_type}')
+        f'\nERROR | Unknown or unrecognized value for `src_path_type`: {src_path_type}\n')
     return
 
 
@@ -205,7 +196,7 @@ def transform_data(src_name: str, src_data, src_format: str, dst_format: str, jq
     # Otherwise return the source data unchanged
     else:
       print(
-          f'ERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`')
+          f'\nERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`\n')
       return src_data
   # Transform data from csv -> ???
   elif src_format == 'csv':
@@ -234,18 +225,17 @@ def transform_data(src_name: str, src_data, src_format: str, dst_format: str, jq
         return le2
       else:
         print(
-            f'ERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`')
+            f'\nERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`\n')
         return src_data
     # Otherwise return the source data unchanged
     else:
       print(
-          f'ERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`')
+          f'\nERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`\n')
       return src_data
-
   # Otherwise return the source data unchanged
   else:
     print(
-        f'ERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`')
+        f'\nERROR | Unknown or unrecognized transformation: `{src_format}` -> `{dst_format}`\n')
     return src_data
 
 
@@ -254,21 +244,20 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
   if dst_path_type == 'file':
     if dst_format == 'csv':
       if isinstance(dst_data, pd.DataFrame):
-        print(f'Writing to `{dst_path}` ...')
+        print(f'Writing data to `{dst_path}` ...')
         dst_data.to_csv(dst_path, sep=',', index=False)
         print(f'Done.\n')
         return
       elif isinstance(dst_data, requests.Response):
         # Extract the data
-        print(f'\nExtracting data from `{dst_path}` ...')
         df = pd.read_csv(io.StringIO(dst_data.content.decode('utf-8')))
-        # Write the data
+        
         print(f'Writing data to `{dst_path}` ...')
         df.to_csv(dst_path, sep=',', index=False)
         print(f'Done.\n')
         return
       elif isinstance(dst_data, jq._ProgramWithInput):
-        print(f'Writing to `{dst_path}` ...')
+        print(f'Writing data to `{dst_path}` ...')
         with open(dst_path, 'w', encoding='utf-8', newline='') as f:
           wr = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
           wr.writerows(dst_data)
@@ -276,21 +265,8 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
       else:
         print(f'\nERROR | Failed writing to `{dst_path}`\n')
         return
-      # if src_format == 'csv':
-      #   print(f'Writing to `{dst_path}` ...\n')
-      #   open(dst_path, 'wb').write(dst_data)
-      #   print(f'SUCCESS | Done writing to `{dst_path}`\n')
-      #   return
-      # else:
-      #   print(f'Writing to `{dst_path}` ...\n')
-      #   with open(dst_path, 'w', encoding='utf-8', newline='') as f:
-      #     wr = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
-      #     wr.writerows(dst_data)
-      #   print(f'SUCCESS | Done writing to `{dst_path}`\n')
-      #   return
     elif dst_format.startswith('json'):
       if isinstance(dst_data, requests.Response):
-        # Write the data
         print(f'Writing data to `{dst_path}` ...')
         with open(dst_path, 'wb') as f:
           f.write(dst_data.content)

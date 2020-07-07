@@ -245,7 +245,7 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
     request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
   elif src_path_type == 'url':
     
-    print(f'\nRequesting `{src_name}` from `{src_path}` ...')
+    print(f'Requesting `{src_name}` from `{src_path}` ...')
     # Fetch data from URL
     src_connector = requests.get(src_path, headers=myHeaders)
     src_data = src_connector

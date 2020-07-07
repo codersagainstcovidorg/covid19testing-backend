@@ -189,9 +189,13 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
     new_src["src_path"] = path_to_freshest_data
     new_src["src_path_type"] = dst_path_type
     new_src["src_format"] = dst_format
-    print(
-        f'Using existing version of `{src_name}` since it was published within the last {data_freshness} hours ...')
-    return get_data(new_src, dst_path_prefix)
+    
+    if dst_path_type == 'file':
+      print(
+          f'ALERT | The following version of `{src_name}` is still fresh: `{path_to_freshest_data}`\n')
+      return
+    else:
+      return get_data(new_src, dst_path_prefix)
   ############ RECURSION END #############
   ########################################
   if src_path_type == 'file':    

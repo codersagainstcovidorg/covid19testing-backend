@@ -13,9 +13,9 @@ DEST_BASE_PUBLIC = os.getenv('DEST_BASE_PUBLIC')
 
 timestr = time.strftime("%Y-%m-%dT%H%M")
 
-# GISCorps CSV (full, from url)
-giscorps_raw_csv = {
-    "src_name": 'GISCorps CSV (from url)',
+# GISCorps CSV
+giscorps_csv_to_archive = {
+    "src_name": 'GISCorps CSV',
     "src_path": 'https://opendata.arcgis.com/datasets/d7d10caf1cec43e0985cc90fbbcf91cb_0.csv',
     "src_path_type": "url",
     "src_format": 'csv',
@@ -28,9 +28,9 @@ giscorps_raw_csv = {
     "melt_params": None
 }
 
-# GISCorps JSON (full, from url)
-giscorps_raw_json_full = {
-    "src_name": 'GISCorps JSON (full, from url)',
+# GISCorps JSON (unfiltered)
+giscorps_json_unfiltered_to_archive = {
+    "src_name": 'GISCorps JSON (unfiltered)',
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json',
     "src_path_type": "url",
     "src_format": 'json',
@@ -44,7 +44,7 @@ giscorps_raw_json_full = {
 }
 
 # GISCorps JSON (filtered)
-giscorps_raw_json_filtered = {
+giscorps_json_filtered_to_archive = {
     "src_name": 'GISCorps JSON (filtered)',
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,facilityid,name,fulladdr,municipality,agency,agencytype,phone,agencyurl,operhours,numvehicles,testcapacity,status,CreationDate,EditDate,drive_through,appt_only,referral_required,services_offered_onsite,call_first,virtual_screening,health_dept_url,State,GlobalID,data_source,county,red_flag,start_date,end_date,type_of_test,test_processing,fine_print&outSR=4326&f=json',
     "src_path_type": "url",
@@ -58,15 +58,15 @@ giscorps_raw_json_filtered = {
     "melt_params": None
 }
 
-# GISCorps JSONL (filtered) - this makes the line-delimited version
-giscorps_proc_json_filtered = {
-    "src_name": 'GISCorps JSONL (filtered)',
+# GISCorps JSON (filtered) -> JSONL
+giscorps_json_filtered_etl_to_jsonl = {
+    "src_name": 'GISCorps JSON (filtered) -> JSONL',
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,facilityid,name,fulladdr,municipality,agency,agencytype,phone,agencyurl,operhours,numvehicles,testcapacity,status,CreationDate,EditDate,drive_through,appt_only,referral_required,services_offered_onsite,call_first,virtual_screening,health_dept_url,State,GlobalID,data_source,county,red_flag,start_date,end_date,type_of_test,test_processing,fine_print&outSR=4326&f=json',
     "src_path_type": "url",
     # "src_path": f'{DEST_BASE_GISCORPS}/Raw/json/{timestr}_giscorps_filtered.json',
     # "src_path_type": "file",
     "src_format": 'json',
-    "data_freshness": 1,
+    "data_freshness": 2,
     "dst_path": f'{DEST_BASE_GISCORPS}/proc/{timestr}_giscorps_filtered.jsonl.json',
     "dst_path_type": "file",
     "dst_format": 'jsonl',
@@ -75,9 +75,9 @@ giscorps_proc_json_filtered = {
     "melt_params": None
 }
 
-# GISCorps CSV for Big Query (filtered)
-giscorps_proc_csv_filtered_bq = {
-    "src_name": 'GISCorps CSV for Big Query (filtered)',
+# GISCorps JSON (filtered) -> CSV
+giscorps_json_filtered_etl_to_csv = {
+    "src_name": 'GISCorps JSON (filtered) -> CSV',
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,facilityid,name,fulladdr,municipality,agency,agencytype,phone,agencyurl,operhours,numvehicles,testcapacity,status,CreationDate,EditDate,drive_through,appt_only,referral_required,services_offered_onsite,call_first,virtual_screening,health_dept_url,State,GlobalID,data_source,county,red_flag,start_date,end_date,type_of_test,test_processing,fine_print&outSR=4326&f=json',
     "src_path_type": "url",
     "src_format": 'json',
@@ -90,9 +90,9 @@ giscorps_proc_csv_filtered_bq = {
     "melt_params": None
 }
 
-# USAFacts Cases Raw
-usafacts_cases_raw_csv = {
-    "src_name": 'USAFacts.org Cases Raw',
+# USAFacts COVID Confirmed Cases -> Archive
+usafacts_covid_confirmed_cases_to_archive = {
+    "src_name": 'USAFacts COVID Confirmed Cases -> Archive',
     "src_path": 'https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv',
     "src_path_type": 'url',
     "src_format": 'csv',
@@ -105,9 +105,9 @@ usafacts_cases_raw_csv = {
     "melt_params": None
 }
 
-# USAFacts Cases Processed
-usafacts_cases_proc_csv = {
-    "src_name": 'USAFacts.org Cases Processed',
+# USAFacts COVID Confirmed Cases -> ETL
+usafacts_covid_confirmed_cases_to_etl = {
+    "src_name": 'USAFacts COVID Confirmed Cases -> ETL',
     "src_path": 'https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv',
     "src_path_type": "url",
     "src_format": 'csv',
@@ -120,9 +120,9 @@ usafacts_cases_proc_csv = {
     "melt_params": {"id_vars": ['countyFIPS', 'County Name', 'State', 'stateFIPS'], "var_name": 'date', "value_name": 'count_covid_cases'}
 }
 
-# CTP States Daily (Archive)
-ctp_daily_csv_archive = {
-    "src_name": 'CTP States Daily (Archive)',
+# CTP States Daily -> Archive
+ctp_states_daily_to_archive = {
+    "src_name": 'CTP States Daily -> Archive',
     "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
     "src_path_type": "url",
     "src_format": 'csv',
@@ -135,12 +135,9 @@ ctp_daily_csv_archive = {
     "melt_params": None
 }
 
-# CTP States Daily
-ctp_daily_csv = {
-    "src_name": 'CTP States Daily',
-    # "src_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/2020-07-06T1343_ctp_states_daily.csv',
-    # "src_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/{timestr}_ctp_states_daily.csv',
-    # "src_path_type": "file",
+# CTP States Daily -> ETL
+ctp_states_daily_to_etl = {
+    "src_name": 'CTP States Daily -> ETL',
     "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
     "src_path_type": "url",
     "src_format": 'csv',
@@ -153,8 +150,9 @@ ctp_daily_csv = {
     "melt_params": None
 }
 
-# url_list = [giscorps_raw_csv, giscorps_raw_json_full, giscorps_raw_json_filtered, giscorps_proc_json_filtered, giscorps_proc_csv_filtered_bq, usafacts_cases_raw_csv, usafacts_cases_proc_csv, ctp_daily_csv_archive, ctp_daily_csv]
-url_list = [ctp_daily_csv]
+
+# url_list = [giscorps_csv_to_archive, giscorps_json_unfiltered_to_archive, giscorps_json_filtered_to_archive, giscorps_json_filtered_etl_to_jsonl, giscorps_json_filtered_etl_to_csv, usafacts_covid_confirmed_cases_to_archive, usafacts_covid_confirmed_cases_to_etl, ctp_states_daily_to_archive, ctp_states_daily_to_etl]
+url_list = [ctp_states_daily_to_etl]
 
 
 def get_data(src: dict, dst_path_prefix: str = timestr):
@@ -196,6 +194,7 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
       return
     else:
       return get_data(new_src, dst_path_prefix)
+  
   ############ RECURSION END #############
   ########################################
   if src_path_type == 'file':    
@@ -219,15 +218,6 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
     # Write the value to its destination
     request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
   elif src_path_type == 'url':
-    # # If a fresh version of the data exists, then use that instead
-    # if (path_to_freshest_data != None):
-    #   new_src = src
-    #   new_src["src_path"] = path_to_freshest_data
-    #   new_src["src_path_type"] = dst_path_type
-    #   new_src["src_format"] = dst_format
-    #   print(
-    #       f'Using existing version of `{src_name}` since it was published within the last {data_freshness} hours ...')
-    #   return get_data(new_src, dst_path_prefix)
     
     print(f'\nRequesting `{src_name}` from `{src_path}` ...')
     # Fetch data from URL
@@ -365,8 +355,6 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
       return
 
 # Returns a string corresponding to the full path of the most recent file at the given path
-
-
 def get_path_to_freshest_data(src_path: str, dst_path: str, max_hours: int):
   ########################################
   ########### RECURSION START ############
@@ -383,7 +371,7 @@ def get_path_to_freshest_data(src_path: str, dst_path: str, max_hours: int):
   ############ RECURSION END #############
   ########################################
   # Set the refresh threshold
-  four_hours_ago = (datetime.now() - timedelta(hours = max_hours)).timestamp()
+  stale_o_clock = (datetime.now() - timedelta(hours = max_hours)).timestamp()
   
   # Determine parent directory
   src_path_parent = os.path.dirname(dst_path)
@@ -401,7 +389,7 @@ def get_path_to_freshest_data(src_path: str, dst_path: str, max_hours: int):
   if count_files > 0:
     # print(f'Found {count_files} file(s) ending in `{src_path_filename}` ...')
     filtered_file_list = list(filter(lambda x: 
-                                     (os.path.getmtime(x) > four_hours_ago),
+                                     (os.path.getmtime(x) > stale_o_clock),
                                      file_list))
     count_matching_files = len(filtered_file_list)
     

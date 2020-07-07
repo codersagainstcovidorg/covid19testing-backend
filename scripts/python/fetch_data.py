@@ -19,7 +19,7 @@ giscorps_raw_csv = {
     "src_path": 'https://opendata.arcgis.com/datasets/d7d10caf1cec43e0985cc90fbbcf91cb_0.csv',
     "src_path_type": "url",
     "src_format": 'csv',
-
+    "data_freshness": 6,
     "dst_path": f'{DEST_BASE_GISCORPS}/Raw/{timestr}_giscorps.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -34,7 +34,7 @@ giscorps_raw_json_full = {
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json',
     "src_path_type": "url",
     "src_format": 'json',
-
+    "data_freshness": 6,
     "dst_path": f'{DEST_BASE_GISCORPS}/Raw/json/{timestr}_giscorps.json',
     "dst_path_type": "file",
     "dst_format": 'json',
@@ -49,7 +49,7 @@ giscorps_raw_json_filtered = {
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,facilityid,name,fulladdr,municipality,agency,agencytype,phone,agencyurl,operhours,numvehicles,testcapacity,status,CreationDate,EditDate,drive_through,appt_only,referral_required,services_offered_onsite,call_first,virtual_screening,health_dept_url,State,GlobalID,data_source,county,red_flag,start_date,end_date,type_of_test,test_processing,fine_print&outSR=4326&f=json',
     "src_path_type": "url",
     "src_format": 'json',
-
+    "data_freshness": 6,
     "dst_path": f'{DEST_BASE_GISCORPS}/Raw/json/{timestr}_giscorps_filtered.json',
     "dst_path_type": "file",
     "dst_format": 'json',
@@ -66,7 +66,7 @@ giscorps_proc_json_filtered = {
     # "src_path": f'{DEST_BASE_GISCORPS}/Raw/json/{timestr}_giscorps_filtered.json',
     # "src_path_type": "file",
     "src_format": 'json',
-
+    "data_freshness": 1,
     "dst_path": f'{DEST_BASE_GISCORPS}/proc/{timestr}_giscorps_filtered.jsonl.json',
     "dst_path_type": "file",
     "dst_format": 'jsonl',
@@ -81,6 +81,7 @@ giscorps_proc_csv_filtered_bq = {
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,facilityid,name,fulladdr,municipality,agency,agencytype,phone,agencyurl,operhours,numvehicles,testcapacity,status,CreationDate,EditDate,drive_through,appt_only,referral_required,services_offered_onsite,call_first,virtual_screening,health_dept_url,State,GlobalID,data_source,county,red_flag,start_date,end_date,type_of_test,test_processing,fine_print&outSR=4326&f=json',
     "src_path_type": "url",
     "src_format": 'json',
+    "data_freshness": 6,
     "dst_path": f'{DEST_BASE_DOWNLOADS}/giscorps.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -95,7 +96,7 @@ usafacts_cases_raw_csv = {
     "src_path": 'https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv',
     "src_path_type": 'url',
     "src_format": 'csv',
-
+    "data_freshness": 12,
     "dst_path": f'{DEST_BASE_PUBLIC}/Cases/Counties/USAFacts/{timestr}_covid_confirmed_usafacts.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -110,7 +111,7 @@ usafacts_cases_proc_csv = {
     "src_path": 'https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv',
     "src_path_type": "url",
     "src_format": 'csv',
-
+    "data_freshness": 8,
     "dst_path": f'{DEST_BASE_DOWNLOADS}/covid_confirmed_usafacts.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -125,7 +126,7 @@ ctp_daily_csv_archive = {
     "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
     "src_path_type": "url",
     "src_format": 'csv',
-
+    "data_freshness": 12,
     "dst_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/{timestr}_ctp_states_daily.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -137,13 +138,13 @@ ctp_daily_csv_archive = {
 # CTP States Daily
 ctp_daily_csv = {
     "src_name": 'CTP States Daily',
-    "src_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/2020-07-06T1343_ctp_states_daily.csv',
+    # "src_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/2020-07-06T1343_ctp_states_daily.csv',
     # "src_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/{timestr}_ctp_states_daily.csv',
-    "src_path_type": "file",
-    # "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
-    # "src_path_type": "url",
+    # "src_path_type": "file",
+    "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
+    "src_path_type": "url",
     "src_format": 'csv',
-
+    "data_freshness": 8,
     "dst_path": f'{DEST_BASE_DOWNLOADS}/ctp_states_daily.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -167,37 +168,41 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
   src_path = src["src_path"]
   src_path_type = src["src_path_type"]
   src_format = src["src_format"]
-
+  data_freshness = src["data_freshness"]
   dst_path = src["dst_path"]
   dst_path_type = src["dst_path_type"]
   dst_format = src["dst_format"]
   does_need_proc = src["does_need_proc"]
   jqstr = src["jqstr"]
-  melt_params = src["melt_params"]
+  melt_params = src["melt_params"]  
   
-  ##################
-  get_latest_filename(src_path, src_format)
-  return
+  ########################################
+  ########### RECURSION START ############
   
-  # * means all if need specific format then *.csv
-  # s = f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/'
-  # list_of_files = glob.glob(s)
-  # list_of_files = filter(lambda x: os.path.getmtime(x) < time. ,glob.glob(s))
-  # latest_file = max(list_of_files, key=os.path.getctime)
-  # print(type(latest_file))
-  # print(latest_file)
-  # return
-  ##################
-
-  if src_path_type == 'file':
+  # Look for fresh data before attempting to download new versions
+  path_to_freshest_data = get_path_to_freshest_data(
+      src_path, dst_path, data_freshness)
+      
+  # If a fresh version of the data exists, then use that instead
+  if (path_to_freshest_data != None):
+    new_src = src
+    new_src["src_path"] = path_to_freshest_data
+    new_src["src_path_type"] = dst_path_type
+    new_src["src_format"] = dst_format
+    print(
+        f'Using existing version of `{src_name}` since it was published within the last {data_freshness} hours ...')
+    return get_data(new_src, dst_path_prefix)
+  ############ RECURSION END #############
+  ########################################
+  if src_path_type == 'file':    
     # Open file
     if src_format == 'csv':
-      print(f'\nReading `{src_name}` from `{src_path}` ...')
+      print(f'Reading `{src_name}` from `{src_path}` ...')
       src_data = pd.read_csv(src_path)
       dst_data = src_data
     else:
       print(
-          f'ERROR | Failed reading from `{src_path}`: format `{src_format}` not recognized\n')
+          f'\nERROR | Failed reading from `{src_path}`: format `{src_format}` not recognized\n')
       return
       
     # Transform data, if necessary
@@ -210,6 +215,16 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
     # Write the value to its destination
     request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
   elif src_path_type == 'url':
+    # # If a fresh version of the data exists, then use that instead
+    # if (path_to_freshest_data != None):
+    #   new_src = src
+    #   new_src["src_path"] = path_to_freshest_data
+    #   new_src["src_path_type"] = dst_path_type
+    #   new_src["src_format"] = dst_format
+    #   print(
+    #       f'Using existing version of `{src_name}` since it was published within the last {data_freshness} hours ...')
+    #   return get_data(new_src, dst_path_prefix)
+    
     print(f'\nRequesting `{src_name}` from `{src_path}` ...')
     # Fetch data from URL
     src_connector = requests.get(src_path, headers=myHeaders)
@@ -346,36 +361,59 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
       return
 
 # Returns a string corresponding to the full path of the most recent file at the given path
-def get_latest_filename(at_path: str, suffix: str, max_hours: int = 2):
+
+
+def get_path_to_freshest_data(src_path: str, dst_path: str, max_hours: int):
+  ########################################
+  ########### RECURSION START ############
+  # Compare the source to destination to avoid an infinite loop
+  src_path_dirname = os.path.dirname(src_path)
+  path_to_freshest_data_dirname = os.path.dirname(dst_path)
+
+  src_path_basename = os.path.basename(src_path).split('_', 1)[-1]
+  path_to_freshest_data_basename = os.path.basename(
+      dst_path).split('_', 1)[-1]
+  if (src_path_dirname == path_to_freshest_data_dirname) and (src_path_basename == path_to_freshest_data_basename):
+    # print('Breaking loop.')
+    return
+  ############ RECURSION END #############
+  ########################################
   # Set the refresh threshold
   four_hours_ago = (datetime.now() - timedelta(hours = max_hours)).timestamp()
   
   # Determine parent directory
-  src_path_parent = os.path.dirname(at_path)
+  src_path_parent = os.path.dirname(dst_path)
+  
+  # Determine the filename root
+  src_path_filename = os.path.basename(dst_path).split('_', 1)[-1]
   
   print(
-      f'\nBuilding list of files modified in the last {max_hours} hours in `{src_path_parent}` ...')
+      f'\nSearching `{src_path_parent}` for files ending in `{src_path_filename}` that were modified within the last {max_hours} hours ...')
   
   # Retrieve the list of files
-  file_list = glob.glob(f'{src_path_parent}/*.{suffix}')
+  file_list = glob.glob(f'{src_path_parent}/*{src_path_filename}')
   count_files = len(file_list)
   
   if count_files > 0:
-    print(f'Found {count_files} `.{suffix}` files ...')
-    filtered_file_list = list(filter(lambda x: (os.path.getmtime(x) > four_hours_ago), file_list))
+    # print(f'Found {count_files} file(s) ending in `{src_path_filename}` ...')
+    filtered_file_list = list(filter(lambda x: 
+                                     (os.path.getmtime(x) > four_hours_ago),
+                                     file_list))
     count_matching_files = len(filtered_file_list)
+    
     print(
-        f'Found {count_matching_files} `.{suffix}` modified within the last {max_hours} hours.')
+        f'Found {count_matching_files} file(s) ...')
     if count_matching_files == 0:
       print(
-          f'Done. No `.{suffix}` files modified within the last {max_hours} hours were found at `{src_path_parent}`\n')
+          f'Done. No files ending in `{src_path_filename}` modified within the last {max_hours} hours were found: `{src_path_parent}`')
       return None
     else:
       latest_filename = max(filtered_file_list, key=os.path.getmtime)
-      print(f'Done. Returned value: `{latest_filename}`\n')
+      print(f'Returning path to most recent version: `{latest_filename}` ...')
       return latest_filename
   else:
-    print(f'Done. No `.{suffix}` files found at `{src_path_parent}`\n')
+    print(
+        f'Done. No files ending in `{src_path_filename}` files found at `{src_path_parent}`')
     return None
 
 for item in url_list:

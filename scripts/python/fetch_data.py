@@ -66,7 +66,7 @@ giscorps_json_filtered_etl_to_jsonl = {
     # "src_path": f'{DEST_BASE_GISCORPS}/Raw/json/{timestr}_giscorps_filtered.json',
     # "src_path_type": "file",
     "src_format": 'json',
-    "data_freshness": 2,
+    "data_freshness": 3,
     "dst_path": f'{DEST_BASE_GISCORPS}/proc/{timestr}_giscorps_filtered.jsonl.json',
     "dst_path_type": "file",
     "dst_format": 'jsonl',
@@ -81,7 +81,7 @@ giscorps_json_filtered_etl_to_csv = {
     "src_path": 'https://services.arcgis.com/8ZpVMShClf8U8dae/arcgis/rest/services/TestingLocations_public/FeatureServer/0/query?where=1%3D1&outFields=OBJECTID,facilityid,name,fulladdr,municipality,agency,agencytype,phone,agencyurl,operhours,numvehicles,testcapacity,status,CreationDate,EditDate,drive_through,appt_only,referral_required,services_offered_onsite,call_first,virtual_screening,health_dept_url,State,GlobalID,data_source,county,red_flag,start_date,end_date,type_of_test,test_processing,fine_print&outSR=4326&f=json',
     "src_path_type": "url",
     "src_format": 'json',
-    "data_freshness": 6,
+    "data_freshness": 3,
     "dst_path": f'{DEST_BASE_DOWNLOADS}/giscorps.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -96,7 +96,7 @@ usafacts_covid_confirmed_cases_to_archive = {
     "src_path": 'https://usafactsstatic.blob.core.windows.net/public/data/covid-19/covid_confirmed_usafacts.csv',
     "src_path_type": 'url',
     "src_format": 'csv',
-    "data_freshness": 12,
+    "data_freshness": 8,
     "dst_path": f'{DEST_BASE_PUBLIC}/Cases/Counties/USAFacts/{timestr}_covid_confirmed_usafacts.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -126,7 +126,7 @@ ctp_states_daily_to_archive = {
     "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
     "src_path_type": "url",
     "src_format": 'csv',
-    "data_freshness": 12,
+    "data_freshness": 8,
     "dst_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/{timestr}_ctp_states_daily.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
@@ -150,16 +150,42 @@ ctp_states_daily_to_etl = {
     "melt_params": None
 }
 
+# LA Times Agency Totals -> Archive
+latimes_agency_totals_to_archive = {
+    "src_name": 'LA Times Agency Totals -> Archive',
+    "src_path": 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-agency-totals.csv',
+    "src_path_type": "url",
+    "src_format": 'csv',
+    "data_freshness": 8,
+    "dst_path": f'{DEST_BASE_PUBLIC}/Cases/Counties/CA/LATimes/{timestr}_covid_confirmed_latimes.csv',
+    "dst_path_type": "file",
+    "dst_format": 'csv',
+    "does_need_proc": False,
+    "jqstr": None,
+    "melt_params": None
+}
 
-# url_list = [giscorps_csv_to_archive, giscorps_json_unfiltered_to_archive, giscorps_json_filtered_to_archive, giscorps_json_filtered_etl_to_jsonl, giscorps_json_filtered_etl_to_csv, usafacts_covid_confirmed_cases_to_archive, usafacts_covid_confirmed_cases_to_etl, ctp_states_daily_to_archive, ctp_states_daily_to_etl]
-url_list = [ctp_states_daily_to_etl]
+latimes_agency_totals_to_etl = {
+    "src_name": 'LA Times Agency Totals -> ETL',
+    "src_path": 'https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/latimes-agency-totals.csv',
+    "src_path_type": "url",
+    "src_format": 'csv',
+    "data_freshness": 8,
+    "dst_path": f'{DEST_BASE_DOWNLOADS}/covid_confirmed_latimes.csv',
+    "dst_path_type": "file",
+    "dst_format": 'csv',
+    "does_need_proc": False,
+    "jqstr": None,
+    "melt_params": None
+}
 
+url_list = [giscorps_csv_to_archive, giscorps_json_unfiltered_to_archive, giscorps_json_filtered_to_archive, giscorps_json_filtered_etl_to_jsonl, giscorps_json_filtered_etl_to_csv, usafacts_covid_confirmed_cases_to_archive, usafacts_covid_confirmed_cases_to_etl, ctp_states_daily_to_archive, ctp_states_daily_to_etl, latimes_agency_totals_to_archive, latimes_agency_totals_to_etl]
 
 def get_data(src: dict, dst_path_prefix: str = timestr):
 
   # Assign common/shared variables
   myHeaders = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-               'Referer': 'https://codersagainstcovid.org', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'}
+               'Referer': 'https://raw.githubusercontent.com', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'}
 
   # Assign source-specific variables
   src_name = src["src_name"]

@@ -1,19 +1,16 @@
 #!/usr/bin/env python
-import os
-import io
+import os, io, sys, time, glob
+from datetime import datetime, timedelta
 import pandas as pd
 import requests
-import json
-import csv
+import json, csv
 import jq
-import time
 
 # Get environment variables
 DEST_BASE_DOWNLOADS = os.getenv('DEST_BASE_DOWNLOADS')
 DEST_BASE_GISCORPS = os.getenv('DEST_BASE_GISCORPS')
-DEST_BASE_USAFACTS = os.getenv('DEST_BASE_USAFACTS')
+DEST_BASE_PUBLIC = os.getenv('DEST_BASE_PUBLIC')
 
-# timestr = time.strftime("%Y-%m-%dT%H%M")
 timestr = time.strftime("%Y-%m-%dT%H%M")
 
 # GISCorps CSV (full, from url)
@@ -99,7 +96,7 @@ usafacts_cases_raw_csv = {
     "src_path_type": 'url',
     "src_format": 'csv',
 
-    "dst_path": f'{DEST_BASE_USAFACTS}/Cases/Counties/USAFacts/{timestr}_covid_confirmed_usafacts.csv',
+    "dst_path": f'{DEST_BASE_PUBLIC}/Cases/Counties/USAFacts/{timestr}_covid_confirmed_usafacts.csv',
     "dst_path_type": "file",
     "dst_format": 'csv',
     "does_need_proc": False,
@@ -122,9 +119,41 @@ usafacts_cases_proc_csv = {
     "melt_params": {"id_vars": ['countyFIPS', 'County Name', 'State', 'stateFIPS'], "var_name": 'date', "value_name": 'count_covid_cases'}
 }
 
+# CTP States Daily (Archive)
+ctp_daily_csv_archive = {
+    "src_name": 'CTP States Daily (Archive)',
+    "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
+    "src_path_type": "url",
+    "src_format": 'csv',
 
-# [giscorps_raw_csv, giscorps_raw_json_full, giscorps_raw_json_filtered, giscorps_proc_json_filtered, giscorps_proc_csv_filtered_bq, usafacts_cases_raw_csv, usafacts_cases_proc_csv]
-url_list = [giscorps_raw_csv]
+    "dst_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/{timestr}_ctp_states_daily.csv',
+    "dst_path_type": "file",
+    "dst_format": 'csv',
+    "does_need_proc": False,
+    "jqstr": None,
+    "melt_params": None
+}
+
+# CTP States Daily
+ctp_daily_csv = {
+    "src_name": 'CTP States Daily',
+    "src_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/2020-07-06T1343_ctp_states_daily.csv',
+    # "src_path": f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/{timestr}_ctp_states_daily.csv',
+    "src_path_type": "file",
+    # "src_path": 'https://covidtracking.com/api/v1/states/daily.csv',
+    # "src_path_type": "url",
+    "src_format": 'csv',
+
+    "dst_path": f'{DEST_BASE_DOWNLOADS}/ctp_states_daily.csv',
+    "dst_path_type": "file",
+    "dst_format": 'csv',
+    "does_need_proc": False,
+    "jqstr": None,
+    "melt_params": None
+}
+
+# url_list = [giscorps_raw_csv, giscorps_raw_json_full, giscorps_raw_json_filtered, giscorps_proc_json_filtered, giscorps_proc_csv_filtered_bq, usafacts_cases_raw_csv, usafacts_cases_proc_csv, ctp_daily_csv_archive, ctp_daily_csv]
+url_list = [ctp_daily_csv]
 
 
 def get_data(src: dict, dst_path_prefix: str = timestr):
@@ -145,14 +174,43 @@ def get_data(src: dict, dst_path_prefix: str = timestr):
   does_need_proc = src["does_need_proc"]
   jqstr = src["jqstr"]
   melt_params = src["melt_params"]
+  
+  ##################
+  get_latest_filename(src_path, src_format)
+  return
+  
+  # * means all if need specific format then *.csv
+  # s = f'{DEST_BASE_PUBLIC}/Tests/COVID Tracker Project/States/'
+  # list_of_files = glob.glob(s)
+  # list_of_files = filter(lambda x: os.path.getmtime(x) < time. ,glob.glob(s))
+  # latest_file = max(list_of_files, key=os.path.getctime)
+  # print(type(latest_file))
+  # print(latest_file)
+  # return
+  ##################
 
   if src_path_type == 'file':
     # Open file
-    with open(src_path, 'rb') as f:
-      print(f'Reading `{src_name}` from `{src_path}` ...\n')
-      f.read()
+    if src_format == 'csv':
+      print(f'\nReading `{src_name}` from `{src_path}` ...')
+      src_data = pd.read_csv(src_path)
+      dst_data = src_data
+    else:
+      print(
+          f'ERROR | Failed reading from `{src_path}`: format `{src_format}` not recognized\n')
+      return
+      
+    # Transform data, if necessary
+    if does_need_proc == True:
+        dst_data = transform_data(
+            src_name, src_data, src_format, dst_format, jqstr, melt_params)  # .all()[0:3]
+
+    # print(f'\ndst_data: {type(dst_data)}\n')
+
+    # Write the value to its destination
+    request_write(dst_data, dst_path, dst_path_type, dst_format, src_format)
   elif src_path_type == 'url':
-    print(f'\nGetting `{src_name}` from `{src_path}` ...')
+    print(f'\nRequesting `{src_name}` from `{src_path}` ...')
     # Fetch data from URL
     src_connector = requests.get(src_path, headers=myHeaders)
     src_data = src_connector
@@ -287,6 +345,38 @@ def request_write(dst_data, dst_path: str, dst_path_type: str, dst_format: str, 
           f'ERROR | Failed writing to `{dst_path}`: destination type `{dst_path_type}` not recognized\n')
       return
 
+# Returns a string corresponding to the full path of the most recent file at the given path
+def get_latest_filename(at_path: str, suffix: str, max_hours: int = 2):
+  # Set the refresh threshold
+  four_hours_ago = (datetime.now() - timedelta(hours = max_hours)).timestamp()
+  
+  # Determine parent directory
+  src_path_parent = os.path.dirname(at_path)
+  
+  print(
+      f'\nBuilding list of files modified in the last {max_hours} hours in `{src_path_parent}` ...')
+  
+  # Retrieve the list of files
+  file_list = glob.glob(f'{src_path_parent}/*.{suffix}')
+  count_files = len(file_list)
+  
+  if count_files > 0:
+    print(f'Found {count_files} `.{suffix}` files ...')
+    filtered_file_list = list(filter(lambda x: (os.path.getmtime(x) > four_hours_ago), file_list))
+    count_matching_files = len(filtered_file_list)
+    print(
+        f'Found {count_matching_files} `.{suffix}` modified within the last {max_hours} hours.')
+    if count_matching_files == 0:
+      print(
+          f'Done. No `.{suffix}` files modified within the last {max_hours} hours were found at `{src_path_parent}`\n')
+      return None
+    else:
+      latest_filename = max(filtered_file_list, key=os.path.getmtime)
+      print(f'Done. Returned value: `{latest_filename}`\n')
+      return latest_filename
+  else:
+    print(f'Done. No `.{suffix}` files found at `{src_path_parent}`\n')
+    return None
 
 for item in url_list:
   get_data(item)

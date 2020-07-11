@@ -147,7 +147,6 @@
           COALESCE(TRIM("attr"#>>'{phone}'), '') AS "phone",
           COALESCE(to_timestamp((("attr"#>>'{start_date}')::double precision) / 1000)::date,
                     to_timestamp((("attr"#>>'{CreationDate}')::double precision) / 1000)::date) AS "period_start",
-          COALESCE((to_timestamp((("attr"#>>'{end_date}')::double precision) / 1000)::date), '9999-12-31'::DATE) AS "period_end",
           CASE 
             WHEN ((COALESCE(TRIM("attr"#>>'{status}'), '') = 'Closed') AND ((to_timestamp((("attr"#>>'{EditDate}')::double precision) / 1000)::date) IS NOT NULL)) THEN (to_timestamp((("attr"#>>'{EditDate}')::double precision) / 1000)::date)
             ELSE COALESCE((to_timestamp((("attr"#>>'{end_date}')::double precision) / 1000)::date), '9999-12-31'::DATE)

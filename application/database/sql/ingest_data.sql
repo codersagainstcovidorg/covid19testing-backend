@@ -26,7 +26,7 @@
             "OBJECTID" text PRIMARY KEY,
             "location_id" text,
             -- "facilityid" text,
-            -- "GlobalID" text,
+            "GlobalID" text,
             "name" text,
             "address" text,
             "phone" text,
@@ -72,6 +72,7 @@
         WITH source AS (
           SELECT
           "data"#>>'{attributes,OBJECTID}' AS "OBJECTID"
+          ,"data"#>>'{attributes,GlobalID}' AS "GlobalID"
           ,"data"#>'{geometry}' AS "geometry"
           ,"data"#>'{attributes}' AS "attr"
           ,"data" AS "raw_data"
@@ -81,7 +82,7 @@
         INSERT INTO ingest_giscorps (
           "OBJECTID",
           -- "facilityid",
-          -- "GlobalID",
+          "GlobalID",
           "location_id",
           "name",
           "address",
@@ -125,7 +126,7 @@
         SELECT 
           "OBJECTID",
           -- "facilityid",
-          -- "GlobalID",
+          "GlobalID",
           CASE
             WHEN (NULLIF(TRIM("OBJECTID"::TEXT), '') IS NOT NULL)
               THEN uuid_in(md5((TRIM("OBJECTID"::TEXT)))::cstring)
@@ -228,7 +229,7 @@
           
           TRIM("attr"#>>'{comments}') AS "comments",
           
-          jsonb_strip_nulls("attr" - '{OBJECTID,facilityid,GlobalID,name,fulladdr,operhours,phone,agency,agencytype,agencyurl,health_dept_url,status,EditDate,CreationDate,appt_only,call_first,referral_required,data_source,municipality,State}'::text[]) 
+          jsonb_strip_nulls("attr" - '{OBJECTID,facilityid,name,fulladdr,operhours,phone,agency,agencytype,agencyurl,health_dept_url,status,EditDate,CreationDate,appt_only,call_first,referral_required,data_source,municipality,State}'::text[]) 
             || jsonb_build_object(
               'is_opened_on_date_adjusted', (TRIM("attr"#>>'{start_date}') IS NOT NULL)
               ,'is_closed_on_date_adjusted', (TRIM("attr"#>>'{end_date}') IS NOT NULL)
@@ -463,6 +464,7 @@
                   ,'is_opened_on_date_adjusted', (ingest_giscorps."raw_data"#>>'{is_opened_on_date_adjusted}')::BOOLEAN
                   ,'vol_note', COALESCE(TRIM("vol_note"), '')
                   ,'fine_print', COALESCE(TRIM("fine_print"), '')
+                  ,'global_id', "GlobalID" 
                 ) -- || "raw_data"::jsonb
               ) AS "raw_data"
               ,NULL::jsonb AS "geojson"

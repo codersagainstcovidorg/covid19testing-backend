@@ -135,8 +135,8 @@
                 md5(
                   (
                     "OBJECTID" ||
-                    round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 6)::text || 
-                    round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 6)::text
+                    round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 10)::text || 
+                    round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 10)::text
                   )
                   )::cstring
                 )
@@ -217,9 +217,9 @@
           
           TRIM("attr"#>>'{State}') AS "State",
           
-          round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 6) AS "lat",
+          round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 10) AS "lat",
           
-          round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 6) AS "long",
+          round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 10) AS "long",
           
           TRIM("attr"#>>'{vol_note}') AS "vol_note",
           
@@ -382,6 +382,9 @@
               
               CASE
                 WHEN (
+                  ("status" NOT IN ('Scheduled to Open', 'Open', 'Scheduled to Close', 'Testing Restricted', 'Impacted'))
+                ) THEN TRUE
+                WHEN (
                   ("lat" IS NULL) OR ("long" IS NULL)
                   OR ("status" IN ('Not Publicly Shared', 'Invalid', '', 'Missing Data', ''))
                   OR ("status" IS NULL)
@@ -450,7 +453,7 @@
                   'is_drive_through', "is_drive_through"
                   ,'is_flagged', "is_flagged"
                   -- ,'test_kind', (COALESCE(LOWER(TRIM("test_kind")), ''))
-                  ,'is_same_day_result', (COALESCE(LOWER(TRIM("test_processing")), '') IN ('point-of-care'))
+                  ,'is_same_day_result', (COALESCE(LOWER(TRIM("test_processing")), '') IN ('point-of-care', 'more than one', 'More than one processing '))
                   ,'is_temporary', ((("period_end"::DATE - CURRENT_DATE) - ("period_start"::DATE - CURRENT_DATE)) = 0)
                   ,'is_scheduled_to_open', ("period_start"::DATE > CURRENT_DATE)
                   ,'is_scheduled_to_close', ("period_end"::text) NOT LIKE ('9999%')
@@ -458,8 +461,8 @@
                   ,'days_remaining_until_close', ("period_end"::DATE - CURRENT_DATE)
                   ,'period_start', "period_start"
                   ,'period_end', "period_end"
-                  ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both', 'molecular and antibody'))
-                  ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('molecular', 'both', 'molecular and antibody'))
+                  ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both', 'molecular and antibody', 'all three', 'antibody and antigen', 'Antibody'))
+                  ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') NOT IN ('antibody', 'antibody-poc', 'antibody and antigen', 'Antibody', 'antigen'))
                   ,'is_opened_on_date_adjusted', (ingest_giscorps."raw_data"#>>'{is_opened_on_date_adjusted}')::BOOLEAN
                   ,'is_opened_on_date_adjusted', (ingest_giscorps."raw_data"#>>'{is_opened_on_date_adjusted}')::BOOLEAN
                   ,'vol_note', COALESCE(TRIM("vol_note"), '')
@@ -477,6 +480,7 @@
               ingest_giscorps
             WHERE
               "status" NOT IN ('Not Publicly Shared', 'Invalid', 'Missing Data', 'Pending Review', 'NULL', '<Null>','') 
+              AND ("status" IN ('Scheduled to Open', 'Open', 'Scheduled to Close', 'Testing Restricted', 'Impacted'))
               AND "status" IS NOT NULL
             GROUP BY
               "OBJECTID",
@@ -652,7 +656,7 @@
           ,"external_location_id"
           ON CONFLICT ("location_id") DO UPDATE
             SET
-              "location_id" = md5(CONCAT('DUPLICATE|',entities."location_latitude",'|',entities."location_longitude"))::uuid
+              "location_id" = md5(CONCAT('DUPLICATE| ',entities."external_location_id",'|',entities."location_latitude",'|',entities."location_longitude"))::uuid
               ,"is_hidden" = TRUE
               ,"is_verified" = FALSE
               ,"location_name" = EXCLUDED."location_name"

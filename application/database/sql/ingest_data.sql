@@ -128,8 +128,13 @@
           -- "facilityid",
           "GlobalID",
           CASE
-            WHEN (NULLIF(TRIM("OBJECTID"::TEXT), '') IS NOT NULL)
-              THEN uuid_in(md5((TRIM("OBJECTID"::TEXT)))::cstring)
+            WHEN (COALESCE(TRIM("attr"#>>'{name}'), '') IS NOT NULL) 
+              THEN make_slug(CONCAT(
+                COALESCE(TRIM("attr"#>>'{State}'), ''), '-',
+                COALESCE(TRIM("attr"#>>'{county}'), TRIM("attr"#>>'{municipality}'), ''), '-',
+                COALESCE(TRIM("attr"#>>'{name}'), ''), '-'))
+            WHEN (COALESCE(TRIM("OBJECTID"::TEXT), '') IS NOT NULL)
+              THEN uuid_in(md5((TRIM("OBJECTID"::TEXT)))::cstring)::text
             WHEN ((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision IS NOT NULL) AND (COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision IS NOT NULL))
               THEN uuid_in(
                 md5(
@@ -139,7 +144,7 @@
                     round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 10)::text
                   )
                   )::cstring
-                )
+                )::text
             ELSE NULL
           END AS "location_id",
           
@@ -285,7 +290,7 @@
         DROP TABLE IF EXISTS entities_proc;
         CREATE TABLE IF NOT EXISTS entities_proc (
           record_id SERIAL PRIMARY KEY,
-          location_id text NOT NULL DEFAULT uuid_in(md5(random()::text || now()::text)::cstring),
+          location_id text NOT NULL, -- DEFAULT uuid_in(md5(random()::text || now()::text)::cstring),
           is_hidden boolean NOT NULL DEFAULT true,
           is_verified boolean NOT NULL DEFAULT false,
           location_name text,
@@ -654,50 +659,51 @@
           ,"raw_data"
           ,"location_status"
           ,"external_location_id"
-          ON CONFLICT ("location_id") DO UPDATE
-            SET
-              "location_id" = md5(CONCAT('DUPLICATE| ',entities."external_location_id",'|',entities."location_latitude",'|',entities."location_longitude"))::uuid
-              ,"is_hidden" = TRUE
-              ,"is_verified" = FALSE
-              ,"location_name" = EXCLUDED."location_name"
-              ,"location_address_street" = EXCLUDED."location_address_street"
-              ,"location_address_locality" = EXCLUDED."location_address_locality"
-              ,"location_address_region" = EXCLUDED."location_address_region"
-              ,"location_address_postal_code" = EXCLUDED."location_address_postal_code"
-              ,"location_latitude" = EXCLUDED."location_latitude"
-              ,"location_longitude" = EXCLUDED."location_longitude"
-              ,"location_contact_phone_main" = EXCLUDED."location_contact_phone_main"
-              ,"location_contact_phone_appointments" = EXCLUDED."location_contact_phone_appointments"
-              ,"location_contact_phone_covid" = EXCLUDED."location_contact_phone_covid"
-              ,"location_contact_url_main" = EXCLUDED."location_contact_url_main"
-              ,"location_contact_url_covid_info" = EXCLUDED."location_contact_url_covid_info"
-              ,"location_contact_url_covid_screening_tool" = EXCLUDED."location_contact_url_covid_screening_tool"
-              ,"location_contact_url_covid_virtual_visit" = EXCLUDED."location_contact_url_covid_virtual_visit"
-              ,"location_contact_url_covid_appointments" = EXCLUDED."location_contact_url_covid_appointments"
-              ,"location_place_of_service_type" = EXCLUDED."location_place_of_service_type"
-              ,"location_hours_of_operation" = EXCLUDED."location_hours_of_operation"
-              ,"is_evaluating_symptoms" = EXCLUDED."is_evaluating_symptoms"
-              ,"is_evaluating_symptoms_by_appointment_only" = EXCLUDED."is_evaluating_symptoms_by_appointment_only"
-              ,"is_ordering_tests" = EXCLUDED."is_ordering_tests"
-              ,"is_ordering_tests_only_for_those_who_meeting_criteria" = EXCLUDED."is_ordering_tests_only_for_those_who_meeting_criteria"
-              ,"is_collecting_samples" = EXCLUDED."is_collecting_samples"
-              ,"is_collecting_samples_onsite" = EXCLUDED."is_collecting_samples_onsite"
-              ,"is_collecting_samples_for_others" = EXCLUDED."is_collecting_samples_for_others"
-              ,"is_collecting_samples_by_appointment_only" = EXCLUDED."is_collecting_samples_by_appointment_only"
-              ,"is_processing_samples" = EXCLUDED."is_processing_samples"
-              ,"is_processing_samples_onsite" = EXCLUDED."is_processing_samples_onsite"
-              ,"is_processing_samples_for_others" = EXCLUDED."is_processing_samples_for_others"
-              ,"location_specific_testing_criteria" = EXCLUDED."location_specific_testing_criteria"
-              ,"additional_information_for_patients" = EXCLUDED."additional_information_for_patients"
-              ,"reference_publisher_of_criteria" = EXCLUDED."reference_publisher_of_criteria"
-              ,"data_source" = EXCLUDED."data_source"
-              ,"raw_data" = EXCLUDED."raw_data"
-              ,"geojson" = EXCLUDED."geojson"
-              ,"created_on" = EXCLUDED."created_on"
-              ,"updated_on" = EXCLUDED."updated_on"
-              ,"deleted_on" = EXCLUDED."deleted_on"
-              ,"location_status" = EXCLUDED."location_status"
-              ,"external_location_id" = EXCLUDED."external_location_id"
+          ON CONFLICT ("location_id") DO NOTHING
+            -- SET
+            --   -- "location_id" = md5(CONCAT('DUPLICATE| ',entities."external_location_id"))::uuid
+            --   "location_id" =  md5(CONCAT('DUPLICATE| ',entities."external_location_id"))::text-- make_slug(CONCAT('EXCLUDED-', COALESCE(TRIM(EXCLUDED."location_name"), ''), '-', COALESCE(TRIM(EXCLUDED."location_address_locality"), ''), COALESCE(TRIM(EXCLUDED."location_address_region"), '')))
+            --   ,"is_hidden" = TRUE
+            --   ,"is_verified" = FALSE
+            --   ,"location_name" = EXCLUDED."location_name"
+            --   ,"location_address_street" = EXCLUDED."location_address_street"
+            --   ,"location_address_locality" = EXCLUDED."location_address_locality"
+            --   ,"location_address_region" = EXCLUDED."location_address_region"
+            --   ,"location_address_postal_code" = EXCLUDED."location_address_postal_code"
+            --   ,"location_latitude" = EXCLUDED."location_latitude"
+            --   ,"location_longitude" = EXCLUDED."location_longitude"
+            --   ,"location_contact_phone_main" = EXCLUDED."location_contact_phone_main"
+            --   ,"location_contact_phone_appointments" = EXCLUDED."location_contact_phone_appointments"
+            --   ,"location_contact_phone_covid" = EXCLUDED."location_contact_phone_covid"
+            --   ,"location_contact_url_main" = EXCLUDED."location_contact_url_main"
+            --   ,"location_contact_url_covid_info" = EXCLUDED."location_contact_url_covid_info"
+            --   ,"location_contact_url_covid_screening_tool" = EXCLUDED."location_contact_url_covid_screening_tool"
+            --   ,"location_contact_url_covid_virtual_visit" = EXCLUDED."location_contact_url_covid_virtual_visit"
+            --   ,"location_contact_url_covid_appointments" = EXCLUDED."location_contact_url_covid_appointments"
+            --   ,"location_place_of_service_type" = EXCLUDED."location_place_of_service_type"
+            --   ,"location_hours_of_operation" = EXCLUDED."location_hours_of_operation"
+            --   ,"is_evaluating_symptoms" = EXCLUDED."is_evaluating_symptoms"
+            --   ,"is_evaluating_symptoms_by_appointment_only" = EXCLUDED."is_evaluating_symptoms_by_appointment_only"
+            --   ,"is_ordering_tests" = EXCLUDED."is_ordering_tests"
+            --   ,"is_ordering_tests_only_for_those_who_meeting_criteria" = EXCLUDED."is_ordering_tests_only_for_those_who_meeting_criteria"
+            --   ,"is_collecting_samples" = EXCLUDED."is_collecting_samples"
+            --   ,"is_collecting_samples_onsite" = EXCLUDED."is_collecting_samples_onsite"
+            --   ,"is_collecting_samples_for_others" = EXCLUDED."is_collecting_samples_for_others"
+            --   ,"is_collecting_samples_by_appointment_only" = EXCLUDED."is_collecting_samples_by_appointment_only"
+            --   ,"is_processing_samples" = EXCLUDED."is_processing_samples"
+            --   ,"is_processing_samples_onsite" = EXCLUDED."is_processing_samples_onsite"
+            --   ,"is_processing_samples_for_others" = EXCLUDED."is_processing_samples_for_others"
+            --   ,"location_specific_testing_criteria" = EXCLUDED."location_specific_testing_criteria"
+            --   ,"additional_information_for_patients" = EXCLUDED."additional_information_for_patients"
+            --   ,"reference_publisher_of_criteria" = EXCLUDED."reference_publisher_of_criteria"
+            --   ,"data_source" = EXCLUDED."data_source"
+            --   ,"raw_data" = EXCLUDED."raw_data"
+            --   ,"geojson" = EXCLUDED."geojson"
+            --   ,"created_on" = EXCLUDED."created_on"
+            --   ,"updated_on" = EXCLUDED."updated_on"
+            --   ,"deleted_on" = EXCLUDED."deleted_on"
+            --   ,"location_status" = EXCLUDED."location_status"
+            --   ,"external_location_id" = EXCLUDED."external_location_id"
         ;
         
         ---- Clean up location URLs

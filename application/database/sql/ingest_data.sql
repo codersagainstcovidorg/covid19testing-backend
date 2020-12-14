@@ -11,19 +11,10 @@
     )
     RETURNS VOID
     AS $$
-      DECLARE
-        current_record_count INTEGER ;
-        new_record_count INTEGER;
       BEGIN
         -- Make sure that we don't inadvertently wipe the DB
         IF (data_source_name NOT ILIKE '%giscorps%') THEN 
           RAISE EXCEPTION E'`Unrecognized data source: `%`', data_source_name;
-        ELSE
-          RAISE NOTICE E'Starting ETL process for `data_source` == %', data_source_name;
-          EXECUTE 'SELECT COUNT(1) FROM entities WHERE data_source ILIKE ' || '''%' || data_source_name || '%''' INTO current_record_count;
-          EXECUTE 'SELECT COUNT(1) FROM data_ingest WHERE data_source ILIKE' || '''%' || data_source_name || '%'' OR data_source IS NULL' INTO new_record_count;
-          ASSERT (new_record_count >= current_record_count), format('Number of source records (%I) must be >= number of existing records (%I).', new_record_count, current_record_count);
-          RAISE NOTICE E'Original record count (%).', current_record_count;
         END IF;
         
         ------------------------------------------------------------------
@@ -35,7 +26,7 @@
             "OBJECTID" text PRIMARY KEY,
             "location_id" text,
             -- "facilityid" text,
-            -- "GlobalID" text,
+            "GlobalID" text,
             "name" text,
             "address" text,
             "phone" text,
@@ -81,6 +72,7 @@
         WITH source AS (
           SELECT
           "data"#>>'{attributes,OBJECTID}' AS "OBJECTID"
+          ,"data"#>>'{attributes,GlobalID}' AS "GlobalID"
           ,"data"#>'{geometry}' AS "geometry"
           ,"data"#>'{attributes}' AS "attr"
           ,"data" AS "raw_data"
@@ -90,7 +82,7 @@
         INSERT INTO ingest_giscorps (
           "OBJECTID",
           -- "facilityid",
-          -- "GlobalID",
+          "GlobalID",
           "location_id",
           "name",
           "address",
@@ -134,15 +126,26 @@
         SELECT 
           "OBJECTID",
           -- "facilityid",
-          -- "GlobalID",
+          "GlobalID",
           CASE
+            WHEN (COALESCE(TRIM("attr"#>>'{name}'), '') IS NOT NULL) 
+              THEN make_slug(CONCAT(
+                COALESCE(TRIM("attr"#>>'{State}'), ''), '-',
+                COALESCE(TRIM("attr"#>>'{county}'), TRIM("attr"#>>'{municipality}'), ''), '-',
+                COALESCE(TRIM("attr"#>>'{name}'), ''), '-'))
+            WHEN (COALESCE(TRIM("OBJECTID"::TEXT), '') IS NOT NULL)
+              THEN uuid_in(md5((TRIM("OBJECTID"::TEXT)))::cstring)::text
             WHEN ((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision IS NOT NULL) AND (COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision IS NOT NULL))
-            THEN uuid_in(
-              md5(
-                ((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision)::text || (COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision)::text)
-                )::cstring
-              ) 
-            ELSE uuid_in(md5(random()::text || now()::text)::cstring)
+              THEN uuid_in(
+                md5(
+                  (
+                    "OBJECTID" ||
+                    round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 10)::text || 
+                    round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 10)::text
+                  )
+                  )::cstring
+                )::text
+            ELSE NULL
           END AS "location_id",
           
           COALESCE(TRIM("attr"#>>'{name}'), '') AS "name",
@@ -150,7 +153,10 @@
           COALESCE(TRIM("attr"#>>'{phone}'), '') AS "phone",
           COALESCE(to_timestamp((("attr"#>>'{start_date}')::double precision) / 1000)::date,
                     to_timestamp((("attr"#>>'{CreationDate}')::double precision) / 1000)::date) AS "period_start",
-          COALESCE((to_timestamp((("attr"#>>'{end_date}')::double precision) / 1000)::date), '9999-12-31'::DATE) AS "period_end",
+          CASE 
+            WHEN ((COALESCE(TRIM("attr"#>>'{status}'), '') = 'Closed') AND ((to_timestamp((("attr"#>>'{EditDate}')::double precision) / 1000)::date) IS NOT NULL)) THEN (to_timestamp((("attr"#>>'{EditDate}')::double precision) / 1000)::date)
+            ELSE COALESCE((to_timestamp((("attr"#>>'{end_date}')::double precision) / 1000)::date), '9999-12-31'::DATE)
+          END AS "period_end",
           COALESCE(TRIM("attr"#>>'{operhours}'), '') AS "hours_of_operation",
           COALESCE(TRIM("attr"#>>'{agency}'), '') AS "managing_organization",
           COALESCE(TRIM("attr"#>>'{agencytype}'), '') AS "managing_organization_kind",
@@ -190,7 +196,7 @@
           
           CASE 
             WHEN (NULLIF(TRIM("attr"#>>'{virtual_screening}'), '') IS NOT NULL) THEN TRIM("attr"#>>'{virtual_screening}') IN ('Available','Required')
-            ELSE TRUE -- Default value
+            ELSE FALSE -- Default value
           END AS "is_virtual_screening_offered",
           
           CASE 
@@ -216,9 +222,9 @@
           
           TRIM("attr"#>>'{State}') AS "State",
           
-          COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::double precision AS "lat",
+          round((COALESCE(("geometry" #>> '{Latitude}'),("geometry" #>> '{y}'))::numeric), 10) AS "lat",
           
-          COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::double precision AS "long",
+          round((COALESCE(("geometry" #>> '{Longitude}'),("geometry" #>> '{x}'))::numeric), 10) AS "long",
           
           TRIM("attr"#>>'{vol_note}') AS "vol_note",
           
@@ -228,7 +234,12 @@
           
           TRIM("attr"#>>'{comments}') AS "comments",
           
-          jsonb_strip_nulls("attr" - '{OBJECTID,facilityid,GlobalID,name,fulladdr,operhours,phone,agency,agencytype,agencyurl,health_dept_url,status,EditDate,CreationDate,appt_only,call_first,referral_required,data_source,municipality,State}'::text[])
+          jsonb_strip_nulls("attr" - '{OBJECTID,facilityid,name,fulladdr,operhours,phone,agency,agencytype,agencyurl,health_dept_url,status,EditDate,CreationDate,appt_only,call_first,referral_required,data_source,municipality,State}'::text[]) 
+            || jsonb_build_object(
+              'is_opened_on_date_adjusted', (TRIM("attr"#>>'{start_date}') IS NOT NULL)
+              ,'is_closed_on_date_adjusted', (TRIM("attr"#>>'{end_date}') IS NOT NULL)
+            )
+          AS "raw_data"
         FROM
           source
         ;
@@ -251,7 +262,7 @@
             ,CASE 
               WHEN "test_kind" IN ('molecular') THEN 'This location offers molecular-based testing options, which are authorized by the FDA to diagnose or to rule out COVID-19. To our knowledge, antibody testing is not offered at this location.'
               WHEN "test_kind" IN ('both') THEN 'Although multiple testing options are offered at this location, please note that antibody tests are NOT authorized by the FDA to rule out COVID-19. This location also offers molecular-based options, which ARE authorized by the FDA for this purpose. '
-              WHEN "test_kind" IN ('antibody','antibody-poc') THEN 'WARNING: This location DOES NOT appear to offer FDA-authorized tests for persons looking to definitely rule out COVID-19 infection. As of April 20, NO ANTIBODY TEST IS AUTHORIZED by the FDA to rule out COVID-19, a separate molecular-based test must be performed. '
+              WHEN "test_kind" IN ('antibody','antibody-poc') THEN 'WARNING: This location DOES NOT appear to offer FDA-authorized tests for persons looking to definitely rule out COVID-19 infection. NO ANTIBODY TEST IS AUTHORIZED by the FDA to rule out COVID-19, a separate molecular-based test must be performed. '
               WHEN "test_kind" IN ('not specified', 'needs more research') THEN 'There is insufficient information to determine which testing options are offered at this location. '
             ELSE NULL END
 
@@ -279,7 +290,7 @@
         DROP TABLE IF EXISTS entities_proc;
         CREATE TABLE IF NOT EXISTS entities_proc (
           record_id SERIAL PRIMARY KEY,
-          location_id text NOT NULL DEFAULT uuid_in(md5(random()::text || now()::text)::cstring),
+          location_id text NOT NULL, -- DEFAULT uuid_in(md5(random()::text || now()::text)::cstring),
           is_hidden boolean NOT NULL DEFAULT true,
           is_verified boolean NOT NULL DEFAULT false,
           location_name text,
@@ -287,8 +298,8 @@
           location_address_locality text,
           location_address_region text,
           location_address_postal_code text,
-          location_latitude double precision,
-          location_longitude double precision,
+          location_latitude numeric,
+          location_longitude numeric,
           location_contact_phone_main text,
           location_contact_phone_appointments text,
           location_contact_phone_covid text,
@@ -324,8 +335,7 @@
         );
         TRUNCATE TABLE "entities_proc" RESTART IDENTITY; -- Truncate existing table
         CREATE UNIQUE INDEX entities_proc_location_id_idx ON entities_proc(location_id text_ops);
-        CREATE UNIQUE INDEX entities_proc_latitude_longitude_idx ON entities_proc(location_latitude float8_ops,location_longitude float8_ops);
-        
+        CREATE UNIQUE INDEX entities_proc_location_id_external_location_id_idx ON entities_proc(location_id text_ops, external_location_id text_ops);
         
         WITH upd AS (
           SELECT
@@ -376,6 +386,9 @@
               "location_id",
               
               CASE
+                WHEN (
+                  ("status" NOT IN ('Scheduled to Open', 'Open', 'Scheduled to Close', 'Testing Restricted', 'Impacted'))
+                ) THEN TRUE
                 WHEN (
                   ("lat" IS NULL) OR ("long" IS NULL)
                   OR ("status" IN ('Not Publicly Shared', 'Invalid', '', 'Missing Data', ''))
@@ -445,7 +458,7 @@
                   'is_drive_through', "is_drive_through"
                   ,'is_flagged', "is_flagged"
                   -- ,'test_kind', (COALESCE(LOWER(TRIM("test_kind")), ''))
-                  ,'is_same_day_result', (COALESCE(LOWER(TRIM("test_processing")), '') IN ('point-of-care'))
+                  ,'is_same_day_result', (COALESCE(LOWER(TRIM("test_processing")), '') IN ('point-of-care', 'more than one', 'More than one processing '))
                   ,'is_temporary', ((("period_end"::DATE - CURRENT_DATE) - ("period_start"::DATE - CURRENT_DATE)) = 0)
                   ,'is_scheduled_to_open', ("period_start"::DATE > CURRENT_DATE)
                   ,'is_scheduled_to_close', ("period_end"::text) NOT LIKE ('9999%')
@@ -453,10 +466,13 @@
                   ,'days_remaining_until_close', ("period_end"::DATE - CURRENT_DATE)
                   ,'period_start', "period_start"
                   ,'period_end', "period_end"
-                  ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both'))
-                  ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('molecular', 'both'))
+                  ,'does_offer_antibody_test', (COALESCE(LOWER(TRIM("test_kind")), '') IN ('antibody', 'antibody-poc', 'both', 'molecular and antibody', 'all three', 'antibody and antigen', 'Antibody'))
+                  ,'does_offer_molecular_test', (COALESCE(LOWER(TRIM("test_kind")), '') NOT IN ('antibody', 'antibody-poc', 'antibody and antigen', 'Antibody', 'antigen'))
+                  ,'is_opened_on_date_adjusted', (ingest_giscorps."raw_data"#>>'{is_opened_on_date_adjusted}')::BOOLEAN
+                  ,'is_opened_on_date_adjusted', (ingest_giscorps."raw_data"#>>'{is_opened_on_date_adjusted}')::BOOLEAN
                   ,'vol_note', COALESCE(TRIM("vol_note"), '')
                   ,'fine_print', COALESCE(TRIM("fine_print"), '')
+                  ,'global_id', "GlobalID" 
                 ) -- || "raw_data"::jsonb
               ) AS "raw_data"
               ,NULL::jsonb AS "geojson"
@@ -464,21 +480,12 @@
               ,"EditDate" AS "updated_on"
               ,CASE WHEN "status" = 'Closed' THEN "EditDate" ELSE NULL END AS "deleted_on"
               ,"status" AS "location_status"
-              ,jsonb_strip_nulls(jsonb_build_array(
-                CASE WHEN NULLIF(TRIM("OBJECTID"), '') IS NOT NULL THEN jsonb_build_object(
-                  'use','primary'
-                  ,'kind','esriFieldTypeOID'
-                  ,'system','Esri'
-                  ,'field','OBJECTID'
-                  ,'alias','OBJECTID'
-                  ,'assigner','GISCorps'
-                  ,'value',NULLIF(TRIM("OBJECTID"), '')
-                ) ELSE NULL END
-              )) AS "external_location_id"
+              ,"OBJECTID" AS "external_location_id"
             FROM
               ingest_giscorps
             WHERE
               "status" NOT IN ('Not Publicly Shared', 'Invalid', 'Missing Data', 'Pending Review', 'NULL', '<Null>','') 
+              AND ("status" IN ('Scheduled to Open', 'Open', 'Scheduled to Close', 'Testing Restricted', 'Impacted'))
               AND "status" IS NOT NULL
             GROUP BY
               "OBJECTID",
@@ -607,6 +614,9 @@
           ,"external_location_id"
         FROM 
           upd
+        WHERE
+          ("location_latitude" IS NOT NULL) AND
+          ("location_longitude" IS NOT NULL)
         GROUP BY
           "location_id"
           ,"is_hidden"
@@ -649,51 +659,51 @@
           ,"raw_data"
           ,"location_status"
           ,"external_location_id"
-        ON CONFLICT ("location_id") DO NOTHING
-          -- ON CONFLICT ("location_id","location_latitude","location_longitude") DO UPDATE
-          --   SET
-          --     "location_id" = md5(CONCAT('DUPLICATE|',entities."location_latitude",'|',entities."location_longitude"))::uuid
-          --     ,"is_hidden" = TRUE
-          --     ,"is_verified" = FALSE
-          --     ,"location_name" = EXCLUDED."location_name"
-          --     ,"location_address_street" = EXCLUDED."location_address_street"
-          --     ,"location_address_locality" = EXCLUDED."location_address_locality"
-          --     ,"location_address_region" = EXCLUDED."location_address_region"
-          --     ,"location_address_postal_code" = EXCLUDED."location_address_postal_code"
-          --     ,"location_latitude" = EXCLUDED."location_latitude"
-          --     ,"location_longitude" = EXCLUDED."location_longitude"
-          --     ,"location_contact_phone_main" = EXCLUDED."location_contact_phone_main"
-          --     ,"location_contact_phone_appointments" = EXCLUDED."location_contact_phone_appointments"
-          --     ,"location_contact_phone_covid" = EXCLUDED."location_contact_phone_covid"
-          --     ,"location_contact_url_main" = EXCLUDED."location_contact_url_main"
-          --     ,"location_contact_url_covid_info" = EXCLUDED."location_contact_url_covid_info"
-          --     ,"location_contact_url_covid_screening_tool" = EXCLUDED."location_contact_url_covid_screening_tool"
-          --     ,"location_contact_url_covid_virtual_visit" = EXCLUDED."location_contact_url_covid_virtual_visit"
-          --     ,"location_contact_url_covid_appointments" = EXCLUDED."location_contact_url_covid_appointments"
-          --     ,"location_place_of_service_type" = EXCLUDED."location_place_of_service_type"
-          --     ,"location_hours_of_operation" = EXCLUDED."location_hours_of_operation"
-          --     ,"is_evaluating_symptoms" = EXCLUDED."is_evaluating_symptoms"
-          --     ,"is_evaluating_symptoms_by_appointment_only" = EXCLUDED."is_evaluating_symptoms_by_appointment_only"
-          --     ,"is_ordering_tests" = EXCLUDED."is_ordering_tests"
-          --     ,"is_ordering_tests_only_for_those_who_meeting_criteria" = EXCLUDED."is_ordering_tests_only_for_those_who_meeting_criteria"
-          --     ,"is_collecting_samples" = EXCLUDED."is_collecting_samples"
-          --     ,"is_collecting_samples_onsite" = EXCLUDED."is_collecting_samples_onsite"
-          --     ,"is_collecting_samples_for_others" = EXCLUDED."is_collecting_samples_for_others"
-          --     ,"is_collecting_samples_by_appointment_only" = EXCLUDED."is_collecting_samples_by_appointment_only"
-          --     ,"is_processing_samples" = EXCLUDED."is_processing_samples"
-          --     ,"is_processing_samples_onsite" = EXCLUDED."is_processing_samples_onsite"
-          --     ,"is_processing_samples_for_others" = EXCLUDED."is_processing_samples_for_others"
-          --     ,"location_specific_testing_criteria" = EXCLUDED."location_specific_testing_criteria"
-          --     ,"additional_information_for_patients" = EXCLUDED."additional_information_for_patients"
-          --     ,"reference_publisher_of_criteria" = EXCLUDED."reference_publisher_of_criteria"
-          --     ,"data_source" = EXCLUDED."data_source"
-          --     ,"raw_data" = EXCLUDED."raw_data"
-          --     ,"geojson" = EXCLUDED."geojson"
-          --     ,"created_on" = EXCLUDED."created_on"
-          --     ,"updated_on" = EXCLUDED."updated_on"
-          --     ,"deleted_on" = EXCLUDED."deleted_on"
-          --     ,"location_status" = EXCLUDED."location_status"
-          --     ,"external_location_id" = EXCLUDED."external_location_id"
+          ON CONFLICT ("location_id") DO NOTHING
+            -- SET
+            --   -- "location_id" = md5(CONCAT('DUPLICATE| ',entities."external_location_id"))::uuid
+            --   "location_id" =  md5(CONCAT('DUPLICATE| ',entities."external_location_id"))::text-- make_slug(CONCAT('EXCLUDED-', COALESCE(TRIM(EXCLUDED."location_name"), ''), '-', COALESCE(TRIM(EXCLUDED."location_address_locality"), ''), COALESCE(TRIM(EXCLUDED."location_address_region"), '')))
+            --   ,"is_hidden" = TRUE
+            --   ,"is_verified" = FALSE
+            --   ,"location_name" = EXCLUDED."location_name"
+            --   ,"location_address_street" = EXCLUDED."location_address_street"
+            --   ,"location_address_locality" = EXCLUDED."location_address_locality"
+            --   ,"location_address_region" = EXCLUDED."location_address_region"
+            --   ,"location_address_postal_code" = EXCLUDED."location_address_postal_code"
+            --   ,"location_latitude" = EXCLUDED."location_latitude"
+            --   ,"location_longitude" = EXCLUDED."location_longitude"
+            --   ,"location_contact_phone_main" = EXCLUDED."location_contact_phone_main"
+            --   ,"location_contact_phone_appointments" = EXCLUDED."location_contact_phone_appointments"
+            --   ,"location_contact_phone_covid" = EXCLUDED."location_contact_phone_covid"
+            --   ,"location_contact_url_main" = EXCLUDED."location_contact_url_main"
+            --   ,"location_contact_url_covid_info" = EXCLUDED."location_contact_url_covid_info"
+            --   ,"location_contact_url_covid_screening_tool" = EXCLUDED."location_contact_url_covid_screening_tool"
+            --   ,"location_contact_url_covid_virtual_visit" = EXCLUDED."location_contact_url_covid_virtual_visit"
+            --   ,"location_contact_url_covid_appointments" = EXCLUDED."location_contact_url_covid_appointments"
+            --   ,"location_place_of_service_type" = EXCLUDED."location_place_of_service_type"
+            --   ,"location_hours_of_operation" = EXCLUDED."location_hours_of_operation"
+            --   ,"is_evaluating_symptoms" = EXCLUDED."is_evaluating_symptoms"
+            --   ,"is_evaluating_symptoms_by_appointment_only" = EXCLUDED."is_evaluating_symptoms_by_appointment_only"
+            --   ,"is_ordering_tests" = EXCLUDED."is_ordering_tests"
+            --   ,"is_ordering_tests_only_for_those_who_meeting_criteria" = EXCLUDED."is_ordering_tests_only_for_those_who_meeting_criteria"
+            --   ,"is_collecting_samples" = EXCLUDED."is_collecting_samples"
+            --   ,"is_collecting_samples_onsite" = EXCLUDED."is_collecting_samples_onsite"
+            --   ,"is_collecting_samples_for_others" = EXCLUDED."is_collecting_samples_for_others"
+            --   ,"is_collecting_samples_by_appointment_only" = EXCLUDED."is_collecting_samples_by_appointment_only"
+            --   ,"is_processing_samples" = EXCLUDED."is_processing_samples"
+            --   ,"is_processing_samples_onsite" = EXCLUDED."is_processing_samples_onsite"
+            --   ,"is_processing_samples_for_others" = EXCLUDED."is_processing_samples_for_others"
+            --   ,"location_specific_testing_criteria" = EXCLUDED."location_specific_testing_criteria"
+            --   ,"additional_information_for_patients" = EXCLUDED."additional_information_for_patients"
+            --   ,"reference_publisher_of_criteria" = EXCLUDED."reference_publisher_of_criteria"
+            --   ,"data_source" = EXCLUDED."data_source"
+            --   ,"raw_data" = EXCLUDED."raw_data"
+            --   ,"geojson" = EXCLUDED."geojson"
+            --   ,"created_on" = EXCLUDED."created_on"
+            --   ,"updated_on" = EXCLUDED."updated_on"
+            --   ,"deleted_on" = EXCLUDED."deleted_on"
+            --   ,"location_status" = EXCLUDED."location_status"
+            --   ,"external_location_id" = EXCLUDED."external_location_id"
         ;
         
         ---- Clean up location URLs
@@ -802,7 +812,7 @@
 
       END;
   $$
-    LANGUAGE plpgsql
-    RETURNS NULL ON NULL INPUT -- the function is NOT executed when there are null arguments
-    PARALLEL UNSAFE
-  ;
+  LANGUAGE plpgsql
+  RETURNS NULL ON NULL INPUT -- the function is NOT executed when there are null arguments
+  PARALLEL UNSAFE
+;

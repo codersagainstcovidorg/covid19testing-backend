@@ -36,7 +36,6 @@ CREATE OR REPLACE FUNCTION update_entities(
       CREATE TABLE IF NOT EXISTS entities_backup AS TABLE entities;
       CREATE UNIQUE INDEX entities_backup_pkey ON entities_backup(record_id int4_ops);
       CREATE UNIQUE INDEX entities_backup_location_id_idx ON entities_backup(location_id text_ops);
-      CREATE UNIQUE INDEX entities_backup_latitude_longitude_idx ON entities_backup(location_latitude float8_ops,location_longitude float8_ops);
 
       ---- Insert into `entities_backup`
       TRUNCATE TABLE "entities_backup" RESTART IDENTITY; -- First, remove all existing values
@@ -59,7 +58,7 @@ CREATE OR REPLACE FUNCTION update_entities(
         *
       FROM 
         "entities_proc"
-      ON CONFLICT ("location_id","location_latitude","location_longitude") DO NOTHING
+      ON CONFLICT ("location_id") DO NOTHING
       ;
       
       ---- Set update timestamp

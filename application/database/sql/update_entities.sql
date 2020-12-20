@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION update_entities(
         RAISE NOTICE E'Starting data update process for `data_source` == %', data_source_name;
         EXECUTE 'SELECT COUNT(1) FROM entities WHERE data_source ILIKE ' || '''%' || data_source_name || '%''' INTO current_record_count;
         EXECUTE 'SELECT COUNT(1) FROM entities_proc WHERE data_source ILIKE' || '''%' || data_source_name || '%'' OR data_source IS NULL' INTO new_record_count;
-        ASSERT (new_record_count >= current_record_count), format('Number of source records (%I) must be >= number of existing records (%I).', new_record_count, current_record_count);
+        -- ASSERT (new_record_count >= current_record_count), format('Number of source records (%I) must be >= number of existing records (%I).', new_record_count, current_record_count);
 
       END IF;
       

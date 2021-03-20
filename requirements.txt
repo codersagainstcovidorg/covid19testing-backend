@@ -10,7 +10,7 @@ Flask-Migrate==2.5.3
 Flask-SQLAlchemy==2.4.1
 isort==4.3.21
 itsdangerous==1.1.0
-Jinja2==2.11.1
+Jinja2==2.11.3
 jmespath==0.9.5
 lazy-object-proxy==1.4.3
 Mako==1.1.2
